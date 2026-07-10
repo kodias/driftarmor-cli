@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "driftarmor"
+version = "0.1.0"
+description = "Checkov-backed AKS Terraform plan implement coach"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "checkov>=3.2,<4",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+driftarmor = "driftarmor.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+  "integration: requires checkov binary on PATH",
+]

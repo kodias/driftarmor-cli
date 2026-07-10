@@ -1,0 +1,32 @@
+{
+  "aks.cluster.present": {
+    "title": "AKS cluster resource present",
+    "citation_url": "https://learn.microsoft.com/en-us/azure/aks/intro-kubernetes",
+    "citation_verified": "2026-07-10"
+  },
+  "aks.node_pool.present": {
+    "title": "Node pool present (default or dedicated)",
+    "citation_url": "https://learn.microsoft.com/en-us/azure/aks/manage-node-pools",
+    "citation_verified": "2026-07-10"
+  },
+  "aks.monitor.oms_or_dcr": {
+    "title": "Cluster metrics agent or DCR present",
+    "citation_url": "https://learn.microsoft.com/en-us/azure/azure-monitor/containers/container-insights-overview",
+    "citation_verified": "2026-07-10"
+  },
+  "aks.monitor.prometheus_manual": {
+    "title": "Confirm Azure Monitor managed Prometheus",
+    "citation_url": "https://learn.microsoft.com/en-us/azure/azure-monitor/essentials/prometheus-metrics-overview",
+    "citation_verified": "2026-07-10"
+  },
+  "aks.rbac.azure_rbac": {
+    "title": "Azure RBAC / Kubernetes RBAC enabled",
+    "citation_url": "https://learn.microsoft.com/en-us/azure/aks/manage-azure-rbac",
+    "citation_verified": "2026-07-10"
+  },
+  "aks.network.private_or_authorized": {
+    "title": "Private cluster or authorized API IP ranges",
+    "citation_url": "https://learn.microsoft.com/en-us/azure/aks/api-server-authorized-ip-ranges",
+    "citation_verified": "2026-07-10"
+  }
+}

@@ -1,0 +1,109 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.9.0",
+  "planned_values": {
+    "root_module": {
+      "resources": [
+        {
+          "address": "azurerm_kubernetes_cluster.main",
+          "mode": "managed",
+          "type": "azurerm_kubernetes_cluster",
+          "name": "main",
+          "provider_name": "registry.terraform.io/hashicorp/azurerm",
+          "values": {
+            "name": "demo-aks",
+            "location": "eastus",
+            "resource_group_name": "rg-demo",
+            "dns_prefix": "demo",
+            "private_cluster_enabled": true,
+            "role_based_access_control_enabled": true,
+            "azure_active_directory_role_based_access_control": [
+              {
+                "azure_rbac_enabled": true,
+                "managed": true
+              }
+            ],
+            "default_node_pool": [
+              {
+                "name": "system",
+                "node_count": 1,
+                "vm_size": "Standard_D2s_v3",
+                "mode": "System"
+              }
+            ],
+            "oms_agent": [
+              {
+                "log_analytics_workspace_id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-demo/providers/Microsoft.OperationalInsights/workspaces/law-demo"
+              }
+            ],
+            "identity": [{"type": "SystemAssigned"}],
+            "api_server_access_profile": []
+          }
+        }
+      ]
+    }
+  },
+  "resource_changes": [
+    {
+      "address": "azurerm_kubernetes_cluster.main",
+      "mode": "managed",
+      "type": "azurerm_kubernetes_cluster",
+      "name": "main",
+      "provider_name": "registry.terraform.io/hashicorp/azurerm",
+      "change": {
+        "actions": ["create"],
+        "before": null,
+        "after": {
+          "name": "demo-aks",
+          "location": "eastus",
+          "resource_group_name": "rg-demo",
+          "dns_prefix": "demo",
+          "private_cluster_enabled": true,
+          "role_based_access_control_enabled": true,
+          "azure_active_directory_role_based_access_control": [
+            {
+              "azure_rbac_enabled": true,
+              "managed": true
+            }
+          ],
+          "default_node_pool": [
+            {
+              "name": "system",
+              "node_count": 1,
+              "vm_size": "Standard_D2s_v3",
+              "mode": "System"
+            }
+          ],
+          "oms_agent": [
+            {
+              "log_analytics_workspace_id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-demo/providers/Microsoft.OperationalInsights/workspaces/law-demo"
+            }
+          ],
+          "identity": [{"type": "SystemAssigned"}],
+          "api_server_access_profile": []
+        },
+        "after_unknown": {
+          "fqdn": true,
+          "id": true,
+          "kube_config": true
+        },
+        "after_sensitive": {}
+      }
+    }
+  ],
+  "configuration": {
+    "provider_config": {},
+    "root_module": {
+      "resources": [
+        {
+          "address": "azurerm_kubernetes_cluster.main",
+          "mode": "managed",
+          "type": "azurerm_kubernetes_cluster",
+          "name": "main",
+          "provider_config_key": "azurerm",
+          "expressions": {}
+        }
+      ]
+    }
+  }
+}

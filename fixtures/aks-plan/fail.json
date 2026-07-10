@@ -1,0 +1,82 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.9.0",
+  "planned_values": {
+    "root_module": {
+      "resources": [
+        {
+          "address": "azurerm_kubernetes_cluster.main",
+          "mode": "managed",
+          "type": "azurerm_kubernetes_cluster",
+          "name": "main",
+          "provider_name": "registry.terraform.io/hashicorp/azurerm",
+          "values": {
+            "name": "demo-aks-min",
+            "location": "eastus",
+            "resource_group_name": "rg-demo",
+            "dns_prefix": "demomin",
+            "private_cluster_enabled": false,
+            "role_based_access_control_enabled": false,
+            "default_node_pool": [
+              {
+                "name": "default",
+                "node_count": 1,
+                "vm_size": "Standard_DS2_v2"
+              }
+            ],
+            "identity": [{"type": "SystemAssigned"}]
+          }
+        }
+      ]
+    }
+  },
+  "resource_changes": [
+    {
+      "address": "azurerm_kubernetes_cluster.main",
+      "mode": "managed",
+      "type": "azurerm_kubernetes_cluster",
+      "name": "main",
+      "provider_name": "registry.terraform.io/hashicorp/azurerm",
+      "change": {
+        "actions": ["create"],
+        "before": null,
+        "after": {
+          "name": "demo-aks-min",
+          "location": "eastus",
+          "resource_group_name": "rg-demo",
+          "dns_prefix": "demomin",
+          "private_cluster_enabled": false,
+          "role_based_access_control_enabled": false,
+          "default_node_pool": [
+            {
+              "name": "default",
+              "node_count": 1,
+              "vm_size": "Standard_DS2_v2"
+            }
+          ],
+          "identity": [{"type": "SystemAssigned"}]
+        },
+        "after_unknown": {
+          "fqdn": true,
+          "id": true
+        },
+        "after_sensitive": {}
+      }
+    }
+  ],
+  "configuration": {
+    "provider_config": {},
+    "root_module": {
+      "resources": [
+        {
+          "address": "azurerm_kubernetes_cluster.main",
+          "mode": "managed",
+          "type": "azurerm_kubernetes_cluster",
+          "name": "main",
+          "provider_config_key": "azurerm",
+          "expressions": {}
+        }
+      ]
+    }
+  }
+}

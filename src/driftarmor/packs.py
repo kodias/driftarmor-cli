@@ -1,9 +1,20 @@
-"""Policy pack detection for DriftArmor check."""
+"""Policy pack detection and product ordering for DriftArmor."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any
+
+
+# Stable report / detect order: AKS → SQL → Storage
+PRODUCT_ORDER: tuple[str, ...] = ("aks", "sql", "storage")
+
+PRODUCT_TITLES: dict[str, str] = {
+    "aks": "AKS",
+    "sql": "Azure SQL",
+    "storage": "Storage",
+    "other": "Other",
+}
 
 
 @dataclass(frozen=True)
@@ -14,8 +25,8 @@ class Pack:
     policies_subdir: str
 
 
-PACKS: tuple[Pack, ...] = (
-    Pack(
+_PACK_DEFS: dict[str, Pack] = {
+    "aks": Pack(
         id="aks",
         resource_types=frozenset(
             {
@@ -32,18 +43,7 @@ PACKS: tuple[Pack, ...] = (
         ),
         policies_subdir="aks",
     ),
-    Pack(
-        id="storage",
-        resource_types=frozenset({"azurerm_storage_account"}),
-        checkov_ids=(
-            "CKV_DRIFTARMOR_STORAGE_1",
-            "CKV_DRIFTARMOR_STORAGE_2",
-            "CKV_DRIFTARMOR_STORAGE_3",
-            "CKV_DRIFTARMOR_STORAGE_4",
-        ),
-        policies_subdir="storage",
-    ),
-    Pack(
+    "sql": Pack(
         id="sql",
         resource_types=frozenset(
             {
@@ -61,9 +61,37 @@ PACKS: tuple[Pack, ...] = (
         ),
         policies_subdir="sql",
     ),
-)
+    "storage": Pack(
+        id="storage",
+        resource_types=frozenset({"azurerm_storage_account"}),
+        checkov_ids=(
+            "CKV_DRIFTARMOR_STORAGE_1",
+            "CKV_DRIFTARMOR_STORAGE_2",
+            "CKV_DRIFTARMOR_STORAGE_3",
+            "CKV_DRIFTARMOR_STORAGE_4",
+        ),
+        policies_subdir="storage",
+    ),
+}
 
-PACK_BY_ID = {p.id: p for p in PACKS}
+PACKS: tuple[Pack, ...] = tuple(_PACK_DEFS[pid] for pid in PRODUCT_ORDER)
+PACK_BY_ID = dict(_PACK_DEFS)
+
+_TYPE_TO_PRODUCT: dict[str, str] = {
+    rtype: pack.id for pack in PACKS for rtype in pack.resource_types
+}
+
+
+def product_for_resource_type(resource_type: str) -> str:
+    """Map Terraform type to product id, or ``other``."""
+    return _TYPE_TO_PRODUCT.get(resource_type, "other")
+
+
+def product_sort_key(product_id: str) -> tuple[int, str]:
+    try:
+        return (PRODUCT_ORDER.index(product_id), product_id)
+    except ValueError:
+        return (len(PRODUCT_ORDER), product_id)
 
 
 def plan_resource_types(plan: dict[str, Any]) -> set[str]:
@@ -76,6 +104,6 @@ def plan_resource_types(plan: dict[str, Any]) -> set[str]:
 
 
 def detect_packs(plan: dict[str, Any]) -> list[Pack]:
-    """Return packs that match resource types in the plan (stable order)."""
+    """Return packs that match resource types in the plan (AKS → SQL → Storage)."""
     types = plan_resource_types(plan)
     return [p for p in PACKS if types & p.resource_types]

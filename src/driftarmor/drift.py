@@ -4,6 +4,12 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
+from driftarmor.packs import (
+    PRODUCT_ORDER,
+    PRODUCT_TITLES,
+    product_for_resource_type,
+)
+
 ActionClass = Literal["create", "update", "delete", "replace"]
 
 _SILENT_SKIP = frozenset({"read", "no-op"})
@@ -47,8 +53,15 @@ def normalize_actions(actions: list[str] | None) -> ActionClass | None:
     raise UnknownActionsError(f"unknown multi-action list: {cleaned!r}")
 
 
+def _action_summary(rows: list[dict[str, Any]]) -> dict[str, int]:
+    summary = {"create": 0, "update": 0, "delete": 0, "replace": 0}
+    for row in rows:
+        summary[row["action_class"]] = summary.get(row["action_class"], 0) + 1
+    return summary
+
+
 def build_drift_report(plan: dict[str, Any]) -> dict[str, Any]:
-    """Build drift report from plan.resource_changes (no before/after fields)."""
+    """Build drift report grouped by product (AKS → SQL → Storage → Other)."""
     raw = plan.get("resource_changes")
     if raw is None:
         changes: list[Any] = []
@@ -59,7 +72,7 @@ def build_drift_report(plan: dict[str, Any]) -> dict[str, Any]:
     else:
         changes = raw
 
-    results: list[dict[str, Any]] = []
+    by_product: dict[str, list[dict[str, Any]]] = {}
     for item in changes:
         if not isinstance(item, dict):
             continue
@@ -79,8 +92,10 @@ def build_drift_report(plan: dict[str, Any]) -> dict[str, Any]:
             continue
         rtype = item.get("type") if isinstance(item.get("type"), str) else ""
         name = item.get("name") if isinstance(item.get("name"), str) else ""
-        results.append(
+        product = product_for_resource_type(rtype)
+        by_product.setdefault(product, []).append(
             {
+                "product": product,
                 "address": address,
                 "type": rtype,
                 "name": name,
@@ -89,13 +104,36 @@ def build_drift_report(plan: dict[str, Any]) -> dict[str, Any]:
             }
         )
 
-    results.sort(key=lambda r: r["address"])
+    for rows in by_product.values():
+        rows.sort(key=lambda r: r["address"])
 
-    summary = {"create": 0, "update": 0, "delete": 0, "replace": 0}
-    for row in results:
-        summary[row["action_class"]] = summary.get(row["action_class"], 0) + 1
+    ordered_ids = [pid for pid in PRODUCT_ORDER if pid in by_product]
+    if "other" in by_product:
+        ordered_ids.append("other")
+    for pid in sorted(by_product.keys()):
+        if pid not in ordered_ids:
+            ordered_ids.append(pid)
 
-    return {"version": 1, "summary": summary, "results": results}
+    products: list[dict[str, Any]] = []
+    flat: list[dict[str, Any]] = []
+    for pid in ordered_ids:
+        rows = by_product[pid]
+        products.append(
+            {
+                "id": pid,
+                "title": PRODUCT_TITLES.get(pid, pid),
+                "summary": _action_summary(rows),
+                "results": rows,
+            }
+        )
+        flat.extend(rows)
+
+    return {
+        "version": 1,
+        "summary": _action_summary(flat),
+        "products": products,
+        "results": flat,
+    }
 
 
 def exit_code_for_drift(report: dict[str, Any]) -> int:

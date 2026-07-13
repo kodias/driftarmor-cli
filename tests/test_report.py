@@ -47,6 +47,8 @@ def test_map_pass_snippet_exit_zero():
     by_id = {r["id"]: r for r in report["results"]}
     assert by_id["aks.monitor.oms_or_dcr"]["severity"] == "pass"
     assert by_id["aks.monitor.prometheus_manual"]["severity"] == "pass"
+    assert [p["id"] for p in report["products"]] == ["aks"]
+    assert all(r["product"] == "aks" for r in report["results"])
 
 
 def test_dcr_in_plan_rescues_oms_fail():

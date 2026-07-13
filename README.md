@@ -4,7 +4,8 @@ Local implement coach for Azure Terraform plans (`check`), plus a
 **destructive-change gate** on plan JSON (`drift`). Wraps **Checkov** custom
 policies for `check` and prints citation checklists with exit codes.
 
-Active `check` packs: **AKS**, **Storage**, **Azure SQL**.
+Active `check` packs (report order): **AKS** → **Azure SQL** → **Storage**.
+`drift` groups the same way (plus **Other** for unmatched types).
 
 Product / marketing site: [driftarmor.net](https://www.driftarmor.net)
 

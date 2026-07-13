@@ -13,7 +13,21 @@ def test_detect_storage_and_sql():
         ]
     }
     packs = detect_packs(plan)
-    assert [p.id for p in packs] == ["storage", "sql"]
+    assert [p.id for p in packs] == ["sql", "storage"]
+
+
+def test_detect_all_products_order():
+    plan = {
+        "resource_changes": [
+            {"type": "azurerm_storage_account", "change": {"actions": ["create"]}},
+            {
+                "type": "azurerm_kubernetes_cluster",
+                "change": {"actions": ["create"]},
+            },
+            {"type": "azurerm_mssql_server", "change": {"actions": ["create"]}},
+        ]
+    }
+    assert [p.id for p in detect_packs(plan)] == ["aks", "sql", "storage"]
 
 
 def test_detect_aks_only():

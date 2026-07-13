@@ -34,6 +34,20 @@ drift = destructive-change gate on terraform show -json resource_changes
 """
 
 
+def _product_sections(report: dict[str, Any]) -> list[dict[str, Any]]:
+    products = report.get("products")
+    if isinstance(products, list) and products:
+        return products
+    # Legacy flat reports: one anonymous section
+    return [
+        {
+            "id": "",
+            "title": "",
+            "results": report.get("results") or [],
+        }
+    ]
+
+
 def _print_check_human(
     report: dict[str, Any],
     *,
@@ -51,26 +65,31 @@ def _print_check_human(
         f"warn={summary.get('warn', 0)}  "
         f"manual={summary.get('manual', 0)}"
     )
-    print()
-    print(f"{'SEVERITY':<8}  {'ID':<36}  TITLE")
-    print(f"{'-' * 8}  {'-' * 36}  {'-' * 40}")
-    for row in report.get("results") or []:
-        severity = str(row.get("severity", ""))
-        padded = f"{severity:<8}"
-        level = SEVERITY_TO_LEVEL.get(severity)
-        sev_cell = colorize(padded, level, enabled=enabled) if level else padded
-        print(
-            f"{sev_cell}  "
-            f"{row.get('id', ''):<36}  "
-            f"{row.get('title', '')}"
-        )
-        detail = row.get("detail") or ""
-        cite = row.get("citation_url") or ""
-        if detail:
-            print(f"          {detail}")
-        if cite:
-            print(f"          cite: {cite}")
+    for section in _product_sections(report):
+        title = section.get("title") or section.get("id") or ""
+        if title:
+            print()
+            print(f"=== {title} ===")
         print()
+        print(f"{'SEVERITY':<8}  {'ID':<36}  TITLE")
+        print(f"{'-' * 8}  {'-' * 36}  {'-' * 40}")
+        for row in section.get("results") or []:
+            severity = str(row.get("severity", ""))
+            padded = f"{severity:<8}"
+            level = SEVERITY_TO_LEVEL.get(severity)
+            sev_cell = colorize(padded, level, enabled=enabled) if level else padded
+            print(
+                f"{sev_cell}  "
+                f"{row.get('id', ''):<36}  "
+                f"{row.get('title', '')}"
+            )
+            detail = row.get("detail") or ""
+            cite = row.get("citation_url") or ""
+            if detail:
+                print(f"          {detail}")
+            if cite:
+                print(f"          cite: {cite}")
+            print()
 
 
 def _print_drift_human(report: dict[str, Any], *, enabled: bool = False) -> None:
@@ -82,19 +101,24 @@ def _print_drift_human(report: dict[str, Any], *, enabled: bool = False) -> None
         f"delete={summary.get('delete', 0)}  "
         f"replace={summary.get('replace', 0)}"
     )
-    print()
-    print(f"{'ACTION':<8}  {'ADDRESS':<44}  TYPE")
-    print(f"{'-' * 8}  {'-' * 44}  {'-' * 32}")
-    for row in report.get("results") or []:
-        action = str(row.get("action_class", ""))
-        padded = f"{action:<8}"
-        level = ACTION_TO_LEVEL.get(action)
-        act_cell = colorize(padded, level, enabled=enabled) if level else padded
-        print(
-            f"{act_cell}  "
-            f"{row.get('address', ''):<44}  "
-            f"{row.get('type', '')}"
-        )
+    for section in _product_sections(report):
+        title = section.get("title") or section.get("id") or ""
+        if title:
+            print()
+            print(f"=== {title} ===")
+        print()
+        print(f"{'ACTION':<8}  {'ADDRESS':<44}  TYPE")
+        print(f"{'-' * 8}  {'-' * 44}  {'-' * 32}")
+        for row in section.get("results") or []:
+            action = str(row.get("action_class", ""))
+            padded = f"{action:<8}"
+            level = ACTION_TO_LEVEL.get(action)
+            act_cell = colorize(padded, level, enabled=enabled) if level else padded
+            print(
+                f"{act_cell}  "
+                f"{row.get('address', ''):<44}  "
+                f"{row.get('type', '')}"
+            )
 
 
 def check_command(

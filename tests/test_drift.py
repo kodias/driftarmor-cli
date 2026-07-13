@@ -60,12 +60,57 @@ def test_build_report_sorts_and_omits_secrets():
     }
     report = build_drift_report(plan)
     assert [r["address"] for r in report["results"]] == ["a.res", "b.res"]
+    assert [p["id"] for p in report["products"]] == ["other"]
     blob = str(report)
     assert "password" not in blob
     assert "secret" not in blob
     assert report["summary"]["create"] == 1
     assert report["summary"]["update"] == 1
     assert exit_code_for_drift(report) == 0
+
+
+def test_build_report_groups_by_product_order():
+    plan = {
+        "resource_changes": [
+            {
+                "address": "azurerm_storage_account.sa",
+                "type": "azurerm_storage_account",
+                "name": "sa",
+                "change": {"actions": ["create"]},
+            },
+            {
+                "address": "azurerm_mssql_server.sql",
+                "type": "azurerm_mssql_server",
+                "name": "sql",
+                "change": {"actions": ["update"]},
+            },
+            {
+                "address": "azurerm_kubernetes_cluster.aks",
+                "type": "azurerm_kubernetes_cluster",
+                "name": "aks",
+                "change": {"actions": ["create"]},
+            },
+            {
+                "address": "azurerm_resource_group.rg",
+                "type": "azurerm_resource_group",
+                "name": "rg",
+                "change": {"actions": ["create"]},
+            },
+        ]
+    }
+    report = build_drift_report(plan)
+    assert [p["id"] for p in report["products"]] == [
+        "aks",
+        "sql",
+        "storage",
+        "other",
+    ]
+    assert [r["product"] for r in report["results"]] == [
+        "aks",
+        "sql",
+        "storage",
+        "other",
+    ]
 
 
 def test_exit_code_replace():

@@ -12,7 +12,12 @@ from driftarmor.aks import (
     plan_has_dcr,
     plan_has_node_pool_resource,
 )
-from driftarmor.packs import Pack, plan_resource_types
+from driftarmor.packs import (
+    PACK_BY_ID,
+    PRODUCT_TITLES,
+    Pack,
+    plan_resource_types,
+)
 
 Severity = Literal["pass", "fail", "warn", "manual"]
 
@@ -43,18 +48,18 @@ PACK_AUTO_RULES: dict[str, tuple[str, ...]] = {
         "aks.rbac.azure_rbac",
         "aks.network.private_or_authorized",
     ),
-    "storage": (
-        "storage.https_only",
-        "storage.min_tls",
-        "storage.blob_public_access",
-        "storage.network_restricted",
-    ),
     "sql": (
         "sql.public_network",
         "sql.entra_admin",
         "sql.min_tls",
         "sql.firewall_any_ip",
         "sql.tde",
+    ),
+    "storage": (
+        "storage.https_only",
+        "storage.min_tls",
+        "storage.blob_public_access",
+        "storage.network_restricted",
     ),
 }
 
@@ -187,13 +192,11 @@ def _apply_plan_ors(
     adjusted = dict(outcomes)
 
     if "aks" in pack_ids:
-        # cluster.present: require create/update of azurerm_kubernetes_cluster
         if has_create_or_update(plan, "azurerm_kubernetes_cluster"):
             adjusted["aks.cluster.present"] = "PASSED"
         else:
             adjusted["aks.cluster.present"] = "FAILED"
 
-        # node_pool: Checkov default_node_pool OR dedicated node pool resource
         node_ok = (
             adjusted.get("aks.node_pool.present") == "PASSED"
             or any_cluster_has_default_node_pool(plan)
@@ -201,22 +204,20 @@ def _apply_plan_ors(
         )
         adjusted["aks.node_pool.present"] = "PASSED" if node_ok else "FAILED"
 
-        # oms_or_dcr: Checkov oms_agent OR DCR resource in plan
         oms_ok = adjusted.get("aks.monitor.oms_or_dcr") == "PASSED" or plan_has_dcr(plan)
         adjusted["aks.monitor.oms_or_dcr"] = "PASSED" if oms_ok else "FAILED"
 
     return adjusted
 
 
-def _rules_for_packs(packs: Sequence[Pack], plan: dict[str, Any]) -> list[str]:
+def _rules_for_pack(pack: Pack, plan: dict[str, Any]) -> list[str]:
     types = plan_resource_types(plan)
     rules: list[str] = []
-    for pack in packs:
-        for rule_id in PACK_AUTO_RULES.get(pack.id, ()):
-            required = RULE_REQUIRES_TYPES.get(rule_id)
-            if required is not None and not (types & required):
-                continue
-            rules.append(rule_id)
+    for rule_id in PACK_AUTO_RULES.get(pack.id, ()):
+        required = RULE_REQUIRES_TYPES.get(rule_id)
+        if required is not None and not (types & required):
+            continue
+        rules.append(rule_id)
     return rules
 
 
@@ -224,12 +225,14 @@ def _result_row(
     rule_id: str,
     severity: Severity,
     *,
+    product: str,
     citations: dict[str, dict[str, str]],
     detail: str,
     title: str | None = None,
 ) -> dict[str, Any]:
     meta = citations.get(rule_id) or {}
     return {
+        "product": product,
         "id": rule_id,
         "severity": severity,
         "title": title or meta.get("title") or DEFAULT_TITLES.get(rule_id, rule_id),
@@ -239,6 +242,41 @@ def _result_row(
     }
 
 
+def _severity_summary(rows: list[dict[str, Any]]) -> dict[str, int]:
+    summary = {"pass": 0, "fail": 0, "warn": 0, "manual": 0}
+    for row in rows:
+        summary[row["severity"]] = summary.get(row["severity"], 0) + 1
+    return summary
+
+
+def _prometheus_row(
+    oms_severity: str,
+    *,
+    citations: dict[str, dict[str, str]],
+) -> dict[str, Any]:
+    if oms_severity == "fail":
+        return _result_row(
+            "aks.monitor.prometheus_manual",
+            "manual",
+            product="aks",
+            citations=citations,
+            detail=(
+                "OMS/DCR missing — manually confirm Azure Monitor managed "
+                "Prometheus is planned outside this root or enable "
+                "Container Insights / DCR"
+            ),
+        )
+    return _result_row(
+        "aks.monitor.prometheus_manual",
+        "pass",
+        product="aks",
+        citations=citations,
+        detail=(
+            "OMS/DCR present; Prometheus still worth confirming in Azure Monitor"
+        ),
+    )
+
+
 def map_checkov_to_report(
     checkov_report: dict[str, Any],
     plan: dict[str, Any],
@@ -246,9 +284,7 @@ def map_checkov_to_report(
     packs: Sequence[Pack] | None = None,
     citations: dict[str, dict[str, str]] | None = None,
 ) -> dict[str, Any]:
-    """Build DriftArmor Report JSON from Checkov output and plan context."""
-    from driftarmor.packs import PACK_BY_ID
-
+    """Build DriftArmor Report JSON grouped by product (AKS → SQL → Storage)."""
     cites = citations if citations is not None else load_citations()
     active = list(packs) if packs is not None else [PACK_BY_ID["aks"]]
     pack_ids = {p.id for p in active}
@@ -258,54 +294,56 @@ def map_checkov_to_report(
         pack_ids=pack_ids,
     )
 
-    results: list[dict[str, Any]] = []
-    for rule_id in _rules_for_packs(active, plan):
-        outcome = outcomes.get(rule_id, "FAILED")
-        if outcome == "PASSED":
-            severity: Severity = "pass"
-            detail = "Check passed"
-        else:
-            severity = FAIL_SEVERITY[rule_id]
-            detail = DEFAULT_FAIL_DETAIL[rule_id]
-        results.append(_result_row(rule_id, severity, citations=cites, detail=detail))
+    products: list[dict[str, Any]] = []
+    flat: list[dict[str, Any]] = []
 
-    if "aks" in pack_ids:
-        oms = next(
-            (r for r in results if r["id"] == "aks.monitor.oms_or_dcr"),
-            None,
-        )
-        if oms is not None:
-            if oms["severity"] == "fail":
-                results.append(
-                    _result_row(
-                        "aks.monitor.prometheus_manual",
-                        "manual",
-                        citations=cites,
-                        detail=(
-                            "OMS/DCR missing — manually confirm Azure Monitor managed "
-                            "Prometheus is planned outside this root or enable "
-                            "Container Insights / DCR"
-                        ),
-                    )
-                )
+    for pack in active:
+        rows: list[dict[str, Any]] = []
+        for rule_id in _rules_for_pack(pack, plan):
+            outcome = outcomes.get(rule_id, "FAILED")
+            if outcome == "PASSED":
+                severity: Severity = "pass"
+                detail = "Check passed"
             else:
-                results.append(
-                    _result_row(
-                        "aks.monitor.prometheus_manual",
-                        "pass",
-                        citations=cites,
-                        detail=(
-                            "OMS/DCR present; Prometheus still worth confirming "
-                            "in Azure Monitor"
-                        ),
-                    )
+                severity = FAIL_SEVERITY[rule_id]
+                detail = DEFAULT_FAIL_DETAIL[rule_id]
+            rows.append(
+                _result_row(
+                    rule_id,
+                    severity,
+                    product=pack.id,
+                    citations=cites,
+                    detail=detail,
                 )
+            )
 
-    summary = {"pass": 0, "fail": 0, "warn": 0, "manual": 0}
-    for row in results:
-        summary[row["severity"]] = summary.get(row["severity"], 0) + 1
+        if pack.id == "aks":
+            oms = next(
+                (r for r in rows if r["id"] == "aks.monitor.oms_or_dcr"),
+                None,
+            )
+            if oms is not None:
+                rows.append(_prometheus_row(oms["severity"], citations=cites))
 
-    return {"version": 1, "summary": summary, "results": results}
+        if not rows:
+            continue
+
+        products.append(
+            {
+                "id": pack.id,
+                "title": PRODUCT_TITLES.get(pack.id, pack.id),
+                "summary": _severity_summary(rows),
+                "results": rows,
+            }
+        )
+        flat.extend(rows)
+
+    return {
+        "version": 1,
+        "summary": _severity_summary(flat),
+        "products": products,
+        "results": flat,
+    }
 
 
 def exit_code_for_report(report: dict[str, Any]) -> int:
@@ -319,5 +357,6 @@ def empty_report() -> dict[str, Any]:
     return {
         "version": 1,
         "summary": {"pass": 0, "fail": 0, "warn": 0, "manual": 0},
+        "products": [],
         "results": [],
     }

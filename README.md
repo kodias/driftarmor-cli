@@ -1,8 +1,10 @@
 # DriftArmor CLI
 
-Local implement coach for AKS-centered Terraform plans (`check`), plus a
+Local implement coach for Azure Terraform plans (`check`), plus a
 **destructive-change gate** on plan JSON (`drift`). Wraps **Checkov** custom
 policies for `check` and prints citation checklists with exit codes.
+
+Active `check` packs: **AKS**, **Storage**, **Azure SQL**.
 
 Product / marketing site: [driftarmor.net](https://www.driftarmor.net)
 
@@ -26,7 +28,7 @@ pip install -e ".[dev]"
 terraform plan -out=tfplan
 terraform show -json tfplan > plan.json
 
-# AKS implement coach (Checkov policies + citations)
+# Implement coach (Checkov packs + citations) — AKS / Storage / Azure SQL
 driftarmor check --plan plan.json
 driftarmor check --plan plan.json --json
 driftarmor check --plan plan.json --no-color
@@ -45,21 +47,25 @@ Large plan files are loaded fully into memory (same as `check`).
 
 | Command | 0 | 1 | 2 |
 |---------|---|---|---|
-| `check` | No AKS resources, or no `fail` | One or more `fail` | Bad plan JSON / checkov missing |
+| `check` | No matched packs, or no `fail` | One or more `fail` | Bad plan JSON / checkov missing |
 | `drift` | No delete/replace (creates/updates OK) | Any delete or replace | Bad plan JSON / unknown actions |
 
 ## Fixtures
 
 ```bash
-driftarmor check --plan fixtures/aks-plan/fail.json   # exit 1
-driftarmor check --plan fixtures/aks-plan/pass.json   # exit 0
+driftarmor check --plan fixtures/aks-plan/fail.json       # exit 1
+driftarmor check --plan fixtures/storage-plan/pass.json   # exit 0
+driftarmor check --plan fixtures/sql-plan/fail.json       # exit 1
 driftarmor drift --plan fixtures/drift-plan/replace.json  # exit 1
 pytest
 ```
 
 ## Providers
 
-- `check` — AKS Checkov policy pack today  
+- `check` — Checkov policy packs (auto-detected from plan resources):
+  - **AKS** — `azurerm_kubernetes_cluster` (+ node pools)
+  - **Storage** — `azurerm_storage_account` (HTTPS, TLS, public blobs, network)
+  - **Azure SQL** — `azurerm_mssql_server` / `_database` / `_firewall_rule`
 - `drift` — provider-agnostic plan-diff (any Terraform plan JSON)
 
 ## Founder dogfood

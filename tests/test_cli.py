@@ -48,7 +48,49 @@ def test_non_aks_plan_exit_0(capsys):
     code = main(["check", "--plan", str(FIXTURES / "no_aks.json")])
     assert code == 0
     out = capsys.readouterr().out
-    assert "no AKS resources; nothing to check" in out
+    assert "nothing to check" in out
+
+
+def test_storage_pass_exit_0(capsys):
+    storage = ROOT / "fixtures" / "storage-plan" / "pass.json"
+    code = main(["check", "--plan", str(storage), "--json"])
+    assert code == 0
+    report = json.loads(capsys.readouterr().out)
+    assert report["summary"]["fail"] == 0
+    ids = {r["id"] for r in report["results"]}
+    assert "storage.https_only" in ids
+
+
+def test_storage_fail_exit_1(capsys):
+    storage = ROOT / "fixtures" / "storage-plan" / "fail.json"
+    code = main(["check", "--plan", str(storage), "--json"])
+    assert code == 1
+    report = json.loads(capsys.readouterr().out)
+    by_id = {r["id"]: r for r in report["results"]}
+    assert by_id["storage.https_only"]["severity"] == "fail"
+    assert by_id["storage.network_restricted"]["severity"] == "warn"
+
+
+def test_sql_pass_exit_0(capsys):
+    sql = ROOT / "fixtures" / "sql-plan" / "pass.json"
+    code = main(["check", "--plan", str(sql), "--json"])
+    assert code == 0
+    report = json.loads(capsys.readouterr().out)
+    assert report["summary"]["fail"] == 0
+    ids = {r["id"] for r in report["results"]}
+    assert "sql.public_network" in ids
+    assert "sql.tde" in ids
+
+
+def test_sql_fail_exit_1(capsys):
+    sql = ROOT / "fixtures" / "sql-plan" / "fail.json"
+    code = main(["check", "--plan", str(sql), "--json"])
+    assert code == 1
+    report = json.loads(capsys.readouterr().out)
+    by_id = {r["id"]: r for r in report["results"]}
+    assert by_id["sql.public_network"]["severity"] == "fail"
+    assert by_id["sql.firewall_any_ip"]["severity"] == "fail"
+    assert by_id["sql.tde"]["severity"] == "fail"
 
 
 @pytest.mark.integration

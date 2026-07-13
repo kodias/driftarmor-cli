@@ -1,32 +1,77 @@
 {
   "aks.cluster.present": {
     "title": "AKS cluster resource present",
-    "citation_url": "https://learn.microsoft.com/en-us/azure/aks/intro-kubernetes",
+    "citation_url": "https://learn.microsoft.com/azure/aks/intro-kubernetes",
     "citation_verified": "2026-07-10"
   },
   "aks.node_pool.present": {
     "title": "Node pool present (default or dedicated)",
-    "citation_url": "https://learn.microsoft.com/en-us/azure/aks/manage-node-pools",
+    "citation_url": "https://learn.microsoft.com/azure/aks/manage-node-pools",
     "citation_verified": "2026-07-10"
   },
   "aks.monitor.oms_or_dcr": {
     "title": "Cluster metrics agent or DCR present",
-    "citation_url": "https://learn.microsoft.com/en-us/azure/azure-monitor/containers/container-insights-overview",
+    "citation_url": "https://learn.microsoft.com/azure/azure-monitor/containers/container-insights-overview",
     "citation_verified": "2026-07-10"
   },
   "aks.monitor.prometheus_manual": {
     "title": "Confirm Azure Monitor managed Prometheus",
-    "citation_url": "https://learn.microsoft.com/en-us/azure/azure-monitor/essentials/prometheus-metrics-overview",
+    "citation_url": "https://learn.microsoft.com/azure/azure-monitor/essentials/prometheus-metrics-overview",
     "citation_verified": "2026-07-10"
   },
   "aks.rbac.azure_rbac": {
     "title": "Azure RBAC / Kubernetes RBAC enabled",
-    "citation_url": "https://learn.microsoft.com/en-us/azure/aks/manage-azure-rbac",
+    "citation_url": "https://learn.microsoft.com/azure/aks/manage-azure-rbac",
     "citation_verified": "2026-07-10"
   },
   "aks.network.private_or_authorized": {
     "title": "Private cluster or authorized API IP ranges",
-    "citation_url": "https://learn.microsoft.com/en-us/azure/aks/api-server-authorized-ip-ranges",
+    "citation_url": "https://learn.microsoft.com/azure/aks/api-server-authorized-ip-ranges",
     "citation_verified": "2026-07-10"
+  },
+  "storage.https_only": {
+    "title": "Storage account requires HTTPS (secure transfer)",
+    "citation_url": "https://learn.microsoft.com/azure/storage/common/storage-require-secure-transfer",
+    "citation_verified": "2026-07-13"
+  },
+  "storage.min_tls": {
+    "title": "Storage account minimum TLS 1.2+",
+    "citation_url": "https://learn.microsoft.com/azure/storage/common/transport-layer-security-configure-minimum-version",
+    "citation_verified": "2026-07-13"
+  },
+  "storage.blob_public_access": {
+    "title": "Storage account disallows public blob access",
+    "citation_url": "https://learn.microsoft.com/azure/storage/blobs/security-recommendations",
+    "citation_verified": "2026-07-13"
+  },
+  "storage.network_restricted": {
+    "title": "Storage public network disabled or network rules Deny",
+    "citation_url": "https://learn.microsoft.com/azure/storage/common/storage-network-security-overview",
+    "citation_verified": "2026-07-13"
+  },
+  "sql.public_network": {
+    "title": "Azure SQL server public network access disabled",
+    "citation_url": "https://learn.microsoft.com/azure/azure-sql/database/connectivity-settings#deny-public-network-access",
+    "citation_verified": "2026-07-13"
+  },
+  "sql.entra_admin": {
+    "title": "Azure SQL server has Microsoft Entra administrator",
+    "citation_url": "https://learn.microsoft.com/azure/azure-sql/database/authentication-aad-overview",
+    "citation_verified": "2026-07-13"
+  },
+  "sql.min_tls": {
+    "title": "Azure SQL server minimum TLS 1.2+",
+    "citation_url": "https://learn.microsoft.com/azure/azure-sql/database/connectivity-architecture",
+    "citation_verified": "2026-07-13"
+  },
+  "sql.firewall_any_ip": {
+    "title": "Azure SQL firewall must not allow 0.0.0.0-255.255.255.255",
+    "citation_url": "https://learn.microsoft.com/azure/azure-sql/database/firewall-configure",
+    "citation_verified": "2026-07-13"
+  },
+  "sql.tde": {
+    "title": "Azure SQL database transparent data encryption enabled",
+    "citation_url": "https://learn.microsoft.com/azure/azure-sql/database/transparent-data-encryption-tde-overview",
+    "citation_verified": "2026-07-13"
   }
 }

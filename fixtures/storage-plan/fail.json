@@ -1,0 +1,52 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.9.0",
+  "planned_values": {
+    "root_module": {
+      "resources": [
+        {
+          "address": "azurerm_storage_account.main",
+          "mode": "managed",
+          "type": "azurerm_storage_account",
+          "name": "main",
+          "provider_name": "registry.terraform.io/hashicorp/azurerm",
+          "values": {
+            "name": "demosa",
+            "resource_group_name": "rg-demo",
+            "location": "eastus",
+            "account_tier": "Standard",
+            "account_replication_type": "LRS",
+            "https_traffic_only_enabled": false,
+            "min_tls_version": "TLS1_0",
+            "allow_nested_items_to_be_public": true,
+            "public_network_access_enabled": true
+          }
+        }
+      ]
+    }
+  },
+  "resource_changes": [
+    {
+      "address": "azurerm_storage_account.main",
+      "mode": "managed",
+      "type": "azurerm_storage_account",
+      "name": "main",
+      "provider_name": "registry.terraform.io/hashicorp/azurerm",
+      "change": {
+        "actions": ["create"],
+        "before": null,
+        "after": {
+          "name": "demosa",
+          "resource_group_name": "rg-demo",
+          "location": "eastus",
+          "account_tier": "Standard",
+          "account_replication_type": "LRS",
+          "https_traffic_only_enabled": false,
+          "min_tls_version": "TLS1_0",
+          "allow_nested_items_to_be_public": true,
+          "public_network_access_enabled": true
+        }
+      }
+    }
+  ]
+}

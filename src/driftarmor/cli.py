@@ -8,7 +8,6 @@ import sys
 from pathlib import Path
 from typing import Any, Sequence
 
-from driftarmor.aks import has_aks_resources
 from driftarmor.checkov_runner import CheckovNotFoundError, CheckovRunError, run_checkov
 from driftarmor.color import ACTION_TO_LEVEL, SEVERITY_TO_LEVEL, colorize, colors_enabled
 from driftarmor.drift import (
@@ -16,6 +15,7 @@ from driftarmor.drift import (
     build_drift_report,
     exit_code_for_drift,
 )
+from driftarmor.packs import detect_packs
 from driftarmor.plan_io import PlanLoadError, load_plan_json
 from driftarmor.report import empty_report, exit_code_for_report, map_checkov_to_report
 
@@ -27,6 +27,7 @@ UNSUPPORTED = """Unsupported:
   - Unmanaged / shadow resources outside Terraform state
   - Auto-remediation
   - Cost / SKU sizing evaluation
+  - Azure resources outside active packs (AKS, Storage, Azure SQL)
 
 drift = destructive-change gate on terraform show -json resource_changes
   (exit 1 on delete/replace). Not continuous live drift detection.
@@ -40,7 +41,7 @@ def _print_check_human(
     enabled: bool = False,
 ) -> None:
     if nothing_to_check:
-        print("no AKS resources; nothing to check")
+        print("no AKS / Storage / Azure SQL resources; nothing to check")
         return
     summary = report.get("summary") or {}
     print(
@@ -110,7 +111,8 @@ def check_command(
 
     enabled = False if as_json else colors_enabled(no_color=no_color)
 
-    if not has_aks_resources(plan):
+    packs = detect_packs(plan)
+    if not packs:
         report = empty_report()
         if as_json:
             print(json.dumps(report, indent=2))
@@ -119,7 +121,7 @@ def check_command(
         return 0
 
     try:
-        checkov_report = run_checkov(plan_path)
+        checkov_report = run_checkov(plan_path, packs=packs)
     except CheckovNotFoundError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
@@ -127,7 +129,7 @@ def check_command(
         print(f"error: {exc}", file=sys.stderr)
         return 2
 
-    report = map_checkov_to_report(checkov_report, plan)
+    report = map_checkov_to_report(checkov_report, plan, packs=packs)
     if as_json:
         print(json.dumps(report, indent=2))
     else:
@@ -165,7 +167,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="driftarmor",
         description=(
-            "AKS Terraform plan implement coach (check) + "
+            "Azure Terraform plan implement coach (AKS / Storage / SQL check) + "
             "plan resource_changes destructive-change gate (drift)"
         ),
         epilog=UNSUPPORTED,
@@ -175,7 +177,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     check = sub.add_parser(
         "check",
-        help="Evaluate a terraform show -json plan for AKS defaults",
+        help="Evaluate a terraform show -json plan for AKS, Storage, and Azure SQL",
         epilog=UNSUPPORTED,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )

@@ -25,7 +25,7 @@ Terraform marks values computed at apply time under `after_unknown`. DriftArmor 
 |------|--------|
 | `pass.json` | AKS cluster with OMS, RBAC, private cluster, default node pool → exit `0` |
 | `fail.json` | AKS cluster missing OMS/DCR (and RBAC) → exit `1`, includes `aks.monitor.oms_or_dcr` fail |
-| `no_aks.json` | Non-AKS resources only → exit `0`, "nothing to check" |
+| `no_aks.json` | Non-pack resources only → exit `0`, "nothing to check" |
 
 ## Regenerate from a real plan (optional)
 

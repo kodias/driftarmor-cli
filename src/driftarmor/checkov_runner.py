@@ -6,16 +6,9 @@ import json
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 
-# Stable Checkov IDs for DriftArmor external policies (must match policies/aks/).
-CHECKOV_CHECK_IDS: tuple[str, ...] = (
-    "CKV_DRIFTARMOR_AKS_1",  # aks.cluster.present
-    "CKV_DRIFTARMOR_AKS_2",  # aks.node_pool.present
-    "CKV_DRIFTARMOR_AKS_3",  # aks.monitor.oms_or_dcr (oms_agent path)
-    "CKV_DRIFTARMOR_AKS_4",  # aks.rbac.azure_rbac
-    "CKV_DRIFTARMOR_AKS_5",  # aks.network.private_or_authorized
-)
+from driftarmor.packs import PACKS, Pack
 
 
 class CheckovNotFoundError(RuntimeError):
@@ -26,13 +19,13 @@ class CheckovRunError(RuntimeError):
     """Raised when checkov exits with an unexpected error or invalid JSON."""
 
 
-def default_policies_dir() -> Path:
-    """Resolve policies/aks relative to the repo (src layout) or install layout."""
+def policies_root() -> Path:
+    """Resolve policies/ relative to the repo (src layout) or install layout."""
     here = Path(__file__).resolve()
     candidates = [
-        here.parents[2] / "policies" / "aks",  # .../src/driftarmor -> repo
-        here.parents[1] / "policies" / "aks",
-        Path.cwd() / "policies" / "aks",
+        here.parents[2] / "policies",  # .../src/driftarmor -> repo
+        here.parents[1] / "policies",
+        Path.cwd() / "policies",
     ]
     for path in candidates:
         if path.is_dir():
@@ -40,14 +33,35 @@ def default_policies_dir() -> Path:
     return candidates[0]
 
 
+def default_policies_dir() -> Path:
+    """Backward-compatible path to the AKS policy pack."""
+    return policies_root() / "aks"
+
+
+def policy_dirs_for_packs(packs: Sequence[Pack], *, root: Path | None = None) -> list[Path]:
+    base = root or policies_root()
+    dirs: list[Path] = []
+    for pack in packs:
+        path = base / pack.policies_subdir
+        if not path.is_dir():
+            raise CheckovRunError(f"policies directory not found: {path}")
+        dirs.append(path)
+    return dirs
+
+
 def run_checkov(
     plan_path: Path,
     *,
+    packs: Sequence[Pack] | None = None,
     policies_dir: Path | None = None,
     checkov_bin: str | None = None,
 ) -> dict[str, Any]:
     """
     Run checkov against a terraform show -json plan file.
+
+    When ``packs`` is provided, loads each pack's external checks dir and
+    filters to that pack's Checkov IDs. Legacy ``policies_dir`` still works
+    for a single directory (AKS IDs only).
 
     Returns the parsed Checkov JSON report (single check_type object).
     """
@@ -58,9 +72,16 @@ def run_checkov(
             "(checkov is a package dependency) or ensure the virtualenv is active."
         )
 
-    policies = policies_dir or default_policies_dir()
-    if not policies.is_dir():
-        raise CheckovRunError(f"policies directory not found: {policies}")
+    active = list(packs) if packs is not None else [p for p in PACKS if p.id == "aks"]
+    if not active:
+        raise CheckovRunError("no policy packs to evaluate")
+
+    if policies_dir is not None:
+        dirs = [policies_dir]
+        check_ids = list(active[0].checkov_ids)
+    else:
+        dirs = policy_dirs_for_packs(active)
+        check_ids = [cid for pack in active for cid in pack.checkov_ids]
 
     cmd = [
         binary,
@@ -68,14 +89,18 @@ def run_checkov(
         str(plan_path),
         "--framework",
         "terraform_plan",
-        "--external-checks-dir",
-        str(policies),
-        "-c",
-        ",".join(CHECKOV_CHECK_IDS),
-        "-o",
-        "json",
-        "--compact",
     ]
+    for d in dirs:
+        cmd.extend(["--external-checks-dir", str(d)])
+    cmd.extend(
+        [
+            "-c",
+            ",".join(check_ids),
+            "-o",
+            "json",
+            "--compact",
+        ]
+    )
 
     try:
         proc = subprocess.run(

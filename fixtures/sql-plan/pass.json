@@ -1,0 +1,112 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.9.0",
+  "planned_values": {
+    "root_module": {
+      "resources": [
+        {
+          "address": "azurerm_mssql_server.main",
+          "mode": "managed",
+          "type": "azurerm_mssql_server",
+          "name": "main",
+          "provider_name": "registry.terraform.io/hashicorp/azurerm",
+          "values": {
+            "name": "demo-sql",
+            "resource_group_name": "rg-demo",
+            "location": "eastus",
+            "version": "12.0",
+            "public_network_access_enabled": false,
+            "minimum_tls_version": "1.2",
+            "azuread_administrator": [
+              {
+                "login_username": "sqladmin",
+                "object_id": "00000000-0000-0000-0000-000000000001",
+                "tenant_id": "00000000-0000-0000-0000-000000000002"
+              }
+            ]
+          }
+        },
+        {
+          "address": "azurerm_mssql_database.app",
+          "mode": "managed",
+          "type": "azurerm_mssql_database",
+          "name": "app",
+          "provider_name": "registry.terraform.io/hashicorp/azurerm",
+          "values": {
+            "name": "appdb",
+            "server_id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-demo/providers/Microsoft.Sql/servers/demo-sql",
+            "transparent_data_encryption_enabled": true
+          }
+        },
+        {
+          "address": "azurerm_mssql_firewall_rule.office",
+          "mode": "managed",
+          "type": "azurerm_mssql_firewall_rule",
+          "name": "office",
+          "provider_name": "registry.terraform.io/hashicorp/azurerm",
+          "values": {
+            "name": "office",
+            "server_id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-demo/providers/Microsoft.Sql/servers/demo-sql",
+            "start_ip_address": "203.0.113.10",
+            "end_ip_address": "203.0.113.10"
+          }
+        }
+      ]
+    }
+  },
+  "resource_changes": [
+    {
+      "address": "azurerm_mssql_server.main",
+      "mode": "managed",
+      "type": "azurerm_mssql_server",
+      "name": "main",
+      "provider_name": "registry.terraform.io/hashicorp/azurerm",
+      "change": {
+        "actions": ["create"],
+        "before": null,
+        "after": {
+          "name": "demo-sql",
+          "public_network_access_enabled": false,
+          "minimum_tls_version": "1.2",
+          "azuread_administrator": [
+            {
+              "login_username": "sqladmin",
+              "object_id": "00000000-0000-0000-0000-000000000001"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "address": "azurerm_mssql_database.app",
+      "mode": "managed",
+      "type": "azurerm_mssql_database",
+      "name": "app",
+      "provider_name": "registry.terraform.io/hashicorp/azurerm",
+      "change": {
+        "actions": ["create"],
+        "before": null,
+        "after": {
+          "name": "appdb",
+          "transparent_data_encryption_enabled": true
+        }
+      }
+    },
+    {
+      "address": "azurerm_mssql_firewall_rule.office",
+      "mode": "managed",
+      "type": "azurerm_mssql_firewall_rule",
+      "name": "office",
+      "provider_name": "registry.terraform.io/hashicorp/azurerm",
+      "change": {
+        "actions": ["create"],
+        "before": null,
+        "after": {
+          "name": "office",
+          "start_ip_address": "203.0.113.10",
+          "end_ip_address": "203.0.113.10"
+        }
+      }
+    }
+  ]
+}

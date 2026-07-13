@@ -1,4 +1,4 @@
-"""CLI entrypoint: driftarmor check --plan PATH [--json]."""
+"""CLI entrypoint: driftarmor check|drift --plan PATH [--json] [--no-color]."""
 
 from __future__ import annotations
 
@@ -10,19 +10,35 @@ from typing import Any, Sequence
 
 from driftarmor.aks import has_aks_resources
 from driftarmor.checkov_runner import CheckovNotFoundError, CheckovRunError, run_checkov
+from driftarmor.color import ACTION_TO_LEVEL, SEVERITY_TO_LEVEL, colorize, colors_enabled
+from driftarmor.drift import (
+    UnknownActionsError,
+    build_drift_report,
+    exit_code_for_drift,
+)
+from driftarmor.plan_io import PlanLoadError, load_plan_json
 from driftarmor.report import empty_report, exit_code_for_report, map_checkov_to_report
 
 
-UNSUPPORTED = """Unsupported in v0:
+UNSUPPORTED = """Unsupported:
   - Plain .tf without plan JSON (use: terraform show -json <planfile>)
   - Remote-only modules not present in the plan
-  - Live Azure / kubectl inspection
+  - Live cloud / kubectl inspection (drift is plan JSON only — not live inventory)
+  - Unmanaged / shadow resources outside Terraform state
   - Auto-remediation
   - Cost / SKU sizing evaluation
+
+drift = destructive-change gate on terraform show -json resource_changes
+  (exit 1 on delete/replace). Not continuous live drift detection.
 """
 
 
-def _print_human(report: dict[str, Any], *, nothing_to_check: bool = False) -> None:
+def _print_check_human(
+    report: dict[str, Any],
+    *,
+    nothing_to_check: bool = False,
+    enabled: bool = False,
+) -> None:
     if nothing_to_check:
         print("no AKS resources; nothing to check")
         return
@@ -38,8 +54,12 @@ def _print_human(report: dict[str, Any], *, nothing_to_check: bool = False) -> N
     print(f"{'SEVERITY':<8}  {'ID':<36}  TITLE")
     print(f"{'-' * 8}  {'-' * 36}  {'-' * 40}")
     for row in report.get("results") or []:
+        severity = str(row.get("severity", ""))
+        padded = f"{severity:<8}"
+        level = SEVERITY_TO_LEVEL.get(severity)
+        sev_cell = colorize(padded, level, enabled=enabled) if level else padded
         print(
-            f"{row.get('severity', ''):<8}  "
+            f"{sev_cell}  "
             f"{row.get('id', ''):<36}  "
             f"{row.get('title', '')}"
         )
@@ -52,31 +72,50 @@ def _print_human(report: dict[str, Any], *, nothing_to_check: bool = False) -> N
         print()
 
 
-def check_command(plan_path: Path, *, as_json: bool) -> int:
-    if not plan_path.is_file():
-        print(f"error: plan file not found: {plan_path}", file=sys.stderr)
-        return 2
+def _print_drift_human(report: dict[str, Any], *, enabled: bool = False) -> None:
+    summary = report.get("summary") or {}
+    print(
+        "summary  "
+        f"create={summary.get('create', 0)}  "
+        f"update={summary.get('update', 0)}  "
+        f"delete={summary.get('delete', 0)}  "
+        f"replace={summary.get('replace', 0)}"
+    )
+    print()
+    print(f"{'ACTION':<8}  {'ADDRESS':<44}  TYPE")
+    print(f"{'-' * 8}  {'-' * 44}  {'-' * 32}")
+    for row in report.get("results") or []:
+        action = str(row.get("action_class", ""))
+        padded = f"{action:<8}"
+        level = ACTION_TO_LEVEL.get(action)
+        act_cell = colorize(padded, level, enabled=enabled) if level else padded
+        print(
+            f"{act_cell}  "
+            f"{row.get('address', ''):<44}  "
+            f"{row.get('type', '')}"
+        )
 
+
+def check_command(
+    plan_path: Path,
+    *,
+    as_json: bool,
+    no_color: bool = False,
+) -> int:
     try:
-        raw = plan_path.read_text(encoding="utf-8")
-        plan = json.loads(raw)
-    except OSError as exc:
-        print(f"error: cannot read plan: {exc}", file=sys.stderr)
-        return 2
-    except json.JSONDecodeError as exc:
-        print(f"error: invalid plan JSON: {exc}", file=sys.stderr)
+        plan = load_plan_json(plan_path)
+    except PlanLoadError as exc:
+        print(f"error: {exc.message}", file=sys.stderr)
         return 2
 
-    if not isinstance(plan, dict):
-        print("error: plan JSON root must be an object", file=sys.stderr)
-        return 2
+    enabled = False if as_json else colors_enabled(no_color=no_color)
 
     if not has_aks_resources(plan):
         report = empty_report()
         if as_json:
             print(json.dumps(report, indent=2))
         else:
-            _print_human(report, nothing_to_check=True)
+            _print_check_human(report, nothing_to_check=True, enabled=enabled)
         return 0
 
     try:
@@ -92,14 +131,43 @@ def check_command(plan_path: Path, *, as_json: bool) -> int:
     if as_json:
         print(json.dumps(report, indent=2))
     else:
-        _print_human(report)
+        _print_check_human(report, enabled=enabled)
     return exit_code_for_report(report)
+
+
+def drift_command(
+    plan_path: Path,
+    *,
+    as_json: bool,
+    no_color: bool = False,
+) -> int:
+    try:
+        plan = load_plan_json(plan_path)
+    except PlanLoadError as exc:
+        print(f"error: {exc.message}", file=sys.stderr)
+        return 2
+
+    try:
+        report = build_drift_report(plan)
+    except UnknownActionsError as exc:
+        print(f"error: {exc.message}", file=sys.stderr)
+        return 2
+
+    if as_json:
+        print(json.dumps(report, indent=2))
+    else:
+        enabled = colors_enabled(no_color=no_color)
+        _print_drift_human(report, enabled=enabled)
+    return exit_code_for_drift(report)
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="driftarmor",
-        description="Checkov-backed AKS Terraform plan implement coach",
+        description=(
+            "AKS Terraform plan implement coach (check) + "
+            "plan resource_changes destructive-change gate (drift)"
+        ),
         epilog=UNSUPPORTED,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -123,6 +191,40 @@ def build_parser() -> argparse.ArgumentParser:
         dest="as_json",
         help="Emit Report JSON instead of a human table",
     )
+    check.add_argument(
+        "--no-color",
+        action="store_true",
+        dest="no_color",
+        help="Disable ANSI colors in human output",
+    )
+
+    drift = sub.add_parser(
+        "drift",
+        help=(
+            "Summarize plan resource_changes (destructive-change gate; "
+            "not live cloud drift)"
+        ),
+        epilog=UNSUPPORTED,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    drift.add_argument(
+        "--plan",
+        required=True,
+        type=Path,
+        help="Path to terraform show -json output",
+    )
+    drift.add_argument(
+        "--json",
+        action="store_true",
+        dest="as_json",
+        help="Emit Drift JSON instead of a human table",
+    )
+    drift.add_argument(
+        "--no-color",
+        action="store_true",
+        dest="no_color",
+        help="Disable ANSI colors in human output",
+    )
     return parser
 
 
@@ -130,7 +232,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(list(argv) if argv is not None else None)
     if args.command == "check":
-        return check_command(args.plan, as_json=args.as_json)
+        return check_command(
+            args.plan,
+            as_json=args.as_json,
+            no_color=args.no_color,
+        )
+    if args.command == "drift":
+        return drift_command(
+            args.plan,
+            as_json=args.as_json,
+            no_color=args.no_color,
+        )
     parser.error(f"unknown command: {args.command}")
     return 2
 

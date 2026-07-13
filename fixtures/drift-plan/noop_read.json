@@ -1,0 +1,42 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.9.0",
+  "resource_changes": [
+    {
+      "address": "azurerm_resource_group.rg",
+      "mode": "managed",
+      "type": "azurerm_resource_group",
+      "name": "rg",
+      "provider_name": "registry.terraform.io/hashicorp/azurerm",
+      "change": {
+        "actions": [
+          "no-op"
+        ],
+        "before": {
+          "secret": "MUST_NOT_APPEAR"
+        },
+        "after": {
+          "secret": "MUST_NOT_APPEAR"
+        }
+      }
+    },
+    {
+      "address": "data.azurerm_client_config.current",
+      "mode": "managed",
+      "type": "azurerm_client_config",
+      "name": "current",
+      "provider_name": "registry.terraform.io/hashicorp/azurerm",
+      "change": {
+        "actions": [
+          "read"
+        ],
+        "before": {
+          "secret": "MUST_NOT_APPEAR"
+        },
+        "after": {
+          "secret": "MUST_NOT_APPEAR"
+        }
+      }
+    }
+  ]
+}

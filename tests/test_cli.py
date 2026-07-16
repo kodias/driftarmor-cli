@@ -93,6 +93,51 @@ def test_sql_fail_exit_1(capsys):
     assert by_id["sql.tde"]["severity"] == "fail"
 
 
+def test_vm_pass_exit_0(capsys):
+    vm = ROOT / "fixtures" / "vm-plan" / "pass.json"
+    code = main(["check", "--plan", str(vm), "--json"])
+    assert code == 0
+    report = json.loads(capsys.readouterr().out)
+    assert report["summary"]["fail"] == 0
+    ids = {r["id"] for r in report["results"]}
+    assert "vm.encryption_at_host" in ids
+    assert "vm.trusted_launch" in ids
+    assert "vm.linux_password_auth" in ids
+
+
+def test_vm_fail_exit_1(capsys):
+    vm = ROOT / "fixtures" / "vm-plan" / "fail.json"
+    code = main(["check", "--plan", str(vm), "--json"])
+    assert code == 1
+    report = json.loads(capsys.readouterr().out)
+    by_id = {r["id"]: r for r in report["results"]}
+    assert by_id["vm.encryption_at_host"]["severity"] == "fail"
+    assert by_id["vm.trusted_launch"]["severity"] == "fail"
+    assert by_id["vm.linux_password_auth"]["severity"] == "fail"
+    assert by_id["vm.managed_identity"]["severity"] == "warn"
+
+
+def test_nsg_pass_exit_0(capsys):
+    nsg = ROOT / "fixtures" / "nsg-plan" / "pass.json"
+    code = main(["check", "--plan", str(nsg), "--json"])
+    assert code == 0
+    report = json.loads(capsys.readouterr().out)
+    assert report["summary"]["fail"] == 0
+    ids = {r["id"] for r in report["results"]}
+    assert "nsg.open_ssh_internet" in ids
+
+
+def test_nsg_fail_exit_1(capsys):
+    nsg = ROOT / "fixtures" / "nsg-plan" / "fail.json"
+    code = main(["check", "--plan", str(nsg), "--json"])
+    assert code == 1
+    report = json.loads(capsys.readouterr().out)
+    by_id = {r["id"]: r for r in report["results"]}
+    assert by_id["nsg.open_ssh_internet"]["severity"] == "fail"
+    assert by_id["nsg.open_rdp_internet"]["severity"] == "fail"
+    assert by_id["nsg.open_all_internet"]["severity"] == "fail"
+
+
 @pytest.mark.integration
 def test_checkov_available():
     assert shutil.which("checkov"), "checkov must be on PATH for integration tests"

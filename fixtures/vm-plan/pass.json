@@ -1,0 +1,67 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.9.0",
+  "planned_values": {
+    "root_module": {
+      "resources": [
+        {
+          "address": "azurerm_linux_virtual_machine.main",
+          "mode": "managed",
+          "type": "azurerm_linux_virtual_machine",
+          "name": "main",
+          "provider_name": "registry.terraform.io/hashicorp/azurerm",
+          "values": {
+            "name": "demo-vm",
+            "resource_group_name": "rg-demo",
+            "location": "eastus",
+            "size": "Standard_D2s_v3",
+            "admin_username": "azureuser",
+            "disable_password_authentication": true,
+            "encryption_at_host_enabled": true,
+            "secure_boot_enabled": true,
+            "vtpm_enabled": true,
+            "identity": [
+              {
+                "type": "SystemAssigned"
+              }
+            ],
+            "network_interface_ids": [
+              "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-demo/providers/Microsoft.Network/networkInterfaces/demo-nic"
+            ],
+            "os_disk": [
+              {
+                "caching": "ReadWrite",
+                "storage_account_type": "Premium_LRS"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "resource_changes": [
+    {
+      "address": "azurerm_linux_virtual_machine.main",
+      "mode": "managed",
+      "type": "azurerm_linux_virtual_machine",
+      "name": "main",
+      "provider_name": "registry.terraform.io/hashicorp/azurerm",
+      "change": {
+        "actions": ["create"],
+        "before": null,
+        "after": {
+          "name": "demo-vm",
+          "disable_password_authentication": true,
+          "encryption_at_host_enabled": true,
+          "secure_boot_enabled": true,
+          "vtpm_enabled": true,
+          "identity": [
+            {
+              "type": "SystemAssigned"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

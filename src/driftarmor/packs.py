@@ -6,13 +6,15 @@ from dataclasses import dataclass
 from typing import Any
 
 
-# Stable report / detect order: AKS → SQL → Storage
-PRODUCT_ORDER: tuple[str, ...] = ("aks", "sql", "storage")
+# Stable report / detect order: AKS → SQL → Storage → VM → NSG
+PRODUCT_ORDER: tuple[str, ...] = ("aks", "sql", "storage", "vm", "nsg")
 
 PRODUCT_TITLES: dict[str, str] = {
     "aks": "AKS",
     "sql": "Azure SQL",
     "storage": "Storage",
+    "vm": "Virtual Machines",
+    "nsg": "Network Security Groups",
     "other": "Other",
 }
 
@@ -72,6 +74,37 @@ _PACK_DEFS: dict[str, Pack] = {
         ),
         policies_subdir="storage",
     ),
+    "vm": Pack(
+        id="vm",
+        resource_types=frozenset(
+            {
+                "azurerm_linux_virtual_machine",
+                "azurerm_windows_virtual_machine",
+            }
+        ),
+        checkov_ids=(
+            "CKV_DRIFTARMOR_VM_1",
+            "CKV_DRIFTARMOR_VM_2",
+            "CKV_DRIFTARMOR_VM_3",
+            "CKV_DRIFTARMOR_VM_4",
+        ),
+        policies_subdir="vm",
+    ),
+    "nsg": Pack(
+        id="nsg",
+        resource_types=frozenset(
+            {
+                "azurerm_network_security_group",
+                "azurerm_network_security_rule",
+            }
+        ),
+        checkov_ids=(
+            "CKV_DRIFTARMOR_NSG_1",
+            "CKV_DRIFTARMOR_NSG_2",
+            "CKV_DRIFTARMOR_NSG_3",
+        ),
+        policies_subdir="nsg",
+    ),
 }
 
 PACKS: tuple[Pack, ...] = tuple(_PACK_DEFS[pid] for pid in PRODUCT_ORDER)
@@ -104,6 +137,6 @@ def plan_resource_types(plan: dict[str, Any]) -> set[str]:
 
 
 def detect_packs(plan: dict[str, Any]) -> list[Pack]:
-    """Return packs that match resource types in the plan (AKS → SQL → Storage)."""
+    """Return packs that match resource types in the plan (product order)."""
     types = plan_resource_types(plan)
     return [p for p in PACKS if types & p.resource_types]

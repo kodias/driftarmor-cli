@@ -73,5 +73,40 @@
     "title": "Azure SQL database transparent data encryption enabled",
     "citation_url": "https://learn.microsoft.com/azure/azure-sql/database/transparent-data-encryption-tde-overview",
     "citation_verified": "2026-07-13"
+  },
+  "vm.encryption_at_host": {
+    "title": "VM encryption at host enabled",
+    "citation_url": "https://learn.microsoft.com/azure/virtual-machines/disk-encryption#encryption-at-host---end-to-end-encryption-for-your-vm-data",
+    "citation_verified": "2026-07-16"
+  },
+  "vm.trusted_launch": {
+    "title": "VM Trusted Launch (secure boot + vTPM)",
+    "citation_url": "https://learn.microsoft.com/azure/virtual-machines/trusted-launch",
+    "citation_verified": "2026-07-16"
+  },
+  "vm.linux_password_auth": {
+    "title": "Linux VM disables password authentication",
+    "citation_url": "https://learn.microsoft.com/azure/virtual-machines/linux/create-ssh-keys-detailed",
+    "citation_verified": "2026-07-16"
+  },
+  "vm.managed_identity": {
+    "title": "VM has a managed identity",
+    "citation_url": "https://learn.microsoft.com/entra/identity/managed-identities-azure-resources/overview",
+    "citation_verified": "2026-07-16"
+  },
+  "nsg.open_ssh_internet": {
+    "title": "NSG must not allow SSH (22) from the Internet",
+    "citation_url": "https://learn.microsoft.com/azure/virtual-network/network-security-groups-overview",
+    "citation_verified": "2026-07-16"
+  },
+  "nsg.open_rdp_internet": {
+    "title": "NSG must not allow RDP (3389) from the Internet",
+    "citation_url": "https://learn.microsoft.com/azure/virtual-network/network-security-groups-overview",
+    "citation_verified": "2026-07-16"
+  },
+  "nsg.open_all_internet": {
+    "title": "NSG must not allow all ports (*) from the Internet",
+    "citation_url": "https://learn.microsoft.com/azure/virtual-network/network-security-groups-overview",
+    "citation_verified": "2026-07-16"
   }
 }

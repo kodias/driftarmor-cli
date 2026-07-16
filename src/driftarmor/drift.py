@@ -61,7 +61,7 @@ def _action_summary(rows: list[dict[str, Any]]) -> dict[str, int]:
 
 
 def build_drift_report(plan: dict[str, Any]) -> dict[str, Any]:
-    """Build drift report grouped by product (AKS → SQL → Storage → Other)."""
+    """Build drift report grouped by product (PRODUCT_ORDER → Other)."""
     raw = plan.get("resource_changes")
     if raw is None:
         changes: list[Any] = []

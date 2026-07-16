@@ -37,6 +37,13 @@ CHECKOV_TO_PRODUCT: dict[str, str] = {
     "CKV_DRIFTARMOR_SQL_3": "sql.min_tls",
     "CKV_DRIFTARMOR_SQL_4": "sql.firewall_any_ip",
     "CKV_DRIFTARMOR_SQL_5": "sql.tde",
+    "CKV_DRIFTARMOR_VM_1": "vm.encryption_at_host",
+    "CKV_DRIFTARMOR_VM_2": "vm.trusted_launch",
+    "CKV_DRIFTARMOR_VM_3": "vm.linux_password_auth",
+    "CKV_DRIFTARMOR_VM_4": "vm.managed_identity",
+    "CKV_DRIFTARMOR_NSG_1": "nsg.open_ssh_internet",
+    "CKV_DRIFTARMOR_NSG_2": "nsg.open_rdp_internet",
+    "CKV_DRIFTARMOR_NSG_3": "nsg.open_all_internet",
 }
 
 # Product rules evaluated via Checkov, ordered per pack.
@@ -61,6 +68,17 @@ PACK_AUTO_RULES: dict[str, tuple[str, ...]] = {
         "storage.blob_public_access",
         "storage.network_restricted",
     ),
+    "vm": (
+        "vm.encryption_at_host",
+        "vm.trusted_launch",
+        "vm.linux_password_auth",
+        "vm.managed_identity",
+    ),
+    "nsg": (
+        "nsg.open_ssh_internet",
+        "nsg.open_rdp_internet",
+        "nsg.open_all_internet",
+    ),
 }
 
 # Only emit the rule when the plan contains at least one of these types.
@@ -71,6 +89,7 @@ RULE_REQUIRES_TYPES: dict[str, frozenset[str]] = {
     "sql.min_tls": frozenset({"azurerm_mssql_server"}),
     "sql.firewall_any_ip": frozenset({"azurerm_mssql_firewall_rule"}),
     "sql.tde": frozenset({"azurerm_mssql_database"}),
+    "vm.linux_password_auth": frozenset({"azurerm_linux_virtual_machine"}),
 }
 
 # When Checkov marks FAILED, map to this DriftArmor severity.
@@ -89,6 +108,13 @@ FAIL_SEVERITY: dict[str, Severity] = {
     "sql.min_tls": "fail",
     "sql.firewall_any_ip": "fail",
     "sql.tde": "fail",
+    "vm.encryption_at_host": "fail",
+    "vm.trusted_launch": "fail",
+    "vm.linux_password_auth": "fail",
+    "vm.managed_identity": "warn",
+    "nsg.open_ssh_internet": "fail",
+    "nsg.open_rdp_internet": "fail",
+    "nsg.open_all_internet": "fail",
 }
 
 DEFAULT_TITLES: dict[str, str] = {
@@ -107,6 +133,13 @@ DEFAULT_TITLES: dict[str, str] = {
     "sql.min_tls": "Azure SQL server minimum TLS 1.2+",
     "sql.firewall_any_ip": "Azure SQL firewall must not allow 0.0.0.0-255.255.255.255",
     "sql.tde": "Azure SQL database transparent data encryption enabled",
+    "vm.encryption_at_host": "VM encryption at host enabled",
+    "vm.trusted_launch": "VM Trusted Launch (secure boot + vTPM)",
+    "vm.linux_password_auth": "Linux VM disables password authentication",
+    "vm.managed_identity": "VM has a managed identity",
+    "nsg.open_ssh_internet": "NSG must not allow SSH (22) from the Internet",
+    "nsg.open_rdp_internet": "NSG must not allow RDP (3389) from the Internet",
+    "nsg.open_all_internet": "NSG must not allow all ports (*) from the Internet",
 }
 
 DEFAULT_FAIL_DETAIL: dict[str, str] = {
@@ -124,6 +157,13 @@ DEFAULT_FAIL_DETAIL: dict[str, str] = {
     "sql.min_tls": "minimum_tls_version is below 1.2 or unset",
     "sql.firewall_any_ip": "firewall rule allows 0.0.0.0-255.255.255.255",
     "sql.tde": "transparent_data_encryption_enabled is false",
+    "vm.encryption_at_host": "encryption_at_host_enabled is false or unset",
+    "vm.trusted_launch": "secure_boot_enabled and/or vtpm_enabled not both true",
+    "vm.linux_password_auth": "disable_password_authentication is false",
+    "vm.managed_identity": "identity block missing or type unset",
+    "nsg.open_ssh_internet": "Inbound Allow from Internet to destination port 22",
+    "nsg.open_rdp_internet": "Inbound Allow from Internet to destination port 3389",
+    "nsg.open_all_internet": "Inbound Allow from Internet to destination port *",
 }
 
 # Backward-compatible alias used by older tests / imports.
@@ -284,7 +324,7 @@ def map_checkov_to_report(
     packs: Sequence[Pack] | None = None,
     citations: dict[str, dict[str, str]] | None = None,
 ) -> dict[str, Any]:
-    """Build DriftArmor Report JSON grouped by product (AKS → SQL → Storage)."""
+    """Build DriftArmor Report JSON grouped by product (PRODUCT_ORDER)."""
     cites = citations if citations is not None else load_citations()
     active = list(packs) if packs is not None else [PACK_BY_ID["aks"]]
     pack_ids = {p.id for p in active}

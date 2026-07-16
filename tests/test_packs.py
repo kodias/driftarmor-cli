@@ -25,9 +25,39 @@ def test_detect_all_products_order():
                 "change": {"actions": ["create"]},
             },
             {"type": "azurerm_mssql_server", "change": {"actions": ["create"]}},
+            {
+                "type": "azurerm_linux_virtual_machine",
+                "change": {"actions": ["create"]},
+            },
+            {
+                "type": "azurerm_network_security_group",
+                "change": {"actions": ["create"]},
+            },
         ]
     }
-    assert [p.id for p in detect_packs(plan)] == ["aks", "sql", "storage"]
+    assert [p.id for p in detect_packs(plan)] == [
+        "aks",
+        "sql",
+        "storage",
+        "vm",
+        "nsg",
+    ]
+
+
+def test_detect_vm_and_nsg():
+    plan = {
+        "resource_changes": [
+            {
+                "type": "azurerm_windows_virtual_machine",
+                "change": {"actions": ["create"]},
+            },
+            {
+                "type": "azurerm_network_security_rule",
+                "change": {"actions": ["create"]},
+            },
+        ]
+    }
+    assert [p.id for p in detect_packs(plan)] == ["vm", "nsg"]
 
 
 def test_detect_aks_only():

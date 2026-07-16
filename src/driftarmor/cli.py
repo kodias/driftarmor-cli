@@ -27,7 +27,7 @@ UNSUPPORTED = """Unsupported:
   - Unmanaged / shadow resources outside Terraform state
   - Auto-remediation
   - Cost / SKU sizing evaluation
-  - Azure resources outside active packs (AKS, SQL, Storage, VM, NSG)
+  - Azure resources outside active packs (AKS, SQL, SQL MI, Storage, VM, NSG, Front Door)
 
 drift = destructive-change gate on terraform show -json resource_changes
   (exit 1 on delete/replace). Not continuous live drift detection.
@@ -55,7 +55,10 @@ def _print_check_human(
     enabled: bool = False,
 ) -> None:
     if nothing_to_check:
-        print("no AKS / SQL / Storage / VM / NSG resources; nothing to check")
+        print(
+            "no AKS / SQL / SQL MI / Storage / VM / NSG / Front Door "
+            "resources; nothing to check"
+        )
         return
     summary = report.get("summary") or {}
     print(
@@ -191,7 +194,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="driftarmor",
         description=(
-            "Azure Terraform plan implement coach (AKS / SQL / Storage / VM / NSG) + "
+            "Azure Terraform plan implement coach "
+            "(AKS / SQL / SQL MI / Storage / VM / NSG / Front Door) + "
             "plan resource_changes destructive-change gate (drift)"
         ),
         epilog=UNSUPPORTED,
@@ -201,7 +205,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     check = sub.add_parser(
         "check",
-        help="Evaluate a terraform show -json plan for AKS, SQL, Storage, VM, and NSG",
+        help=(
+            "Evaluate a terraform show -json plan for AKS, SQL, SQL MI, "
+            "Storage, VM, NSG, and Front Door"
+        ),
         epilog=UNSUPPORTED,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )

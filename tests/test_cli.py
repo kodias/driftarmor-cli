@@ -138,6 +138,52 @@ def test_nsg_fail_exit_1(capsys):
     assert by_id["nsg.open_all_internet"]["severity"] == "fail"
 
 
+def test_sqlmi_pass_exit_0(capsys):
+    path = ROOT / "fixtures" / "sqlmi-plan" / "pass.json"
+    code = main(["check", "--plan", str(path), "--json"])
+    assert code == 0
+    report = json.loads(capsys.readouterr().out)
+    assert report["summary"]["fail"] == 0
+    ids = {r["id"] for r in report["results"]}
+    assert "sqlmi.public_data_endpoint" in ids
+    assert "sqlmi.entra_admin" in ids
+
+
+def test_sqlmi_fail_exit_1(capsys):
+    path = ROOT / "fixtures" / "sqlmi-plan" / "fail.json"
+    code = main(["check", "--plan", str(path), "--json"])
+    assert code == 1
+    report = json.loads(capsys.readouterr().out)
+    by_id = {r["id"]: r for r in report["results"]}
+    assert by_id["sqlmi.public_data_endpoint"]["severity"] == "fail"
+    assert by_id["sqlmi.min_tls"]["severity"] == "fail"
+    assert by_id["sqlmi.entra_admin"]["severity"] == "fail"
+    assert by_id["sqlmi.identity"]["severity"] == "warn"
+
+
+def test_frontdoor_pass_exit_0(capsys):
+    path = ROOT / "fixtures" / "frontdoor-plan" / "pass.json"
+    code = main(["check", "--plan", str(path), "--json"])
+    assert code == 0
+    report = json.loads(capsys.readouterr().out)
+    assert report["summary"]["fail"] == 0
+    ids = {r["id"] for r in report["results"]}
+    assert "frontdoor.waf_attached" in ids
+    assert "frontdoor.waf_prevention" in ids
+
+
+def test_frontdoor_fail_exit_1(capsys):
+    path = ROOT / "fixtures" / "frontdoor-plan" / "fail.json"
+    code = main(["check", "--plan", str(path), "--json"])
+    assert code == 1
+    report = json.loads(capsys.readouterr().out)
+    by_id = {r["id"]: r for r in report["results"]}
+    assert by_id["frontdoor.waf_attached"]["severity"] == "pass"
+    assert by_id["frontdoor.waf_enabled"]["severity"] == "fail"
+    assert by_id["frontdoor.waf_prevention"]["severity"] == "fail"
+    assert by_id["frontdoor.waf_managed_rules"]["severity"] == "fail"
+
+
 @pytest.mark.integration
 def test_checkov_available():
     assert shutil.which("checkov"), "checkov must be on PATH for integration tests"

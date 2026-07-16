@@ -6,15 +6,25 @@ from dataclasses import dataclass
 from typing import Any
 
 
-# Stable report / detect order: AKS → SQL → Storage → VM → NSG
-PRODUCT_ORDER: tuple[str, ...] = ("aks", "sql", "storage", "vm", "nsg")
+# Stable report / detect order
+PRODUCT_ORDER: tuple[str, ...] = (
+    "aks",
+    "sql",
+    "sqlmi",
+    "storage",
+    "vm",
+    "nsg",
+    "frontdoor",
+)
 
 PRODUCT_TITLES: dict[str, str] = {
     "aks": "AKS",
     "sql": "Azure SQL",
+    "sqlmi": "SQL Managed Instance",
     "storage": "Storage",
     "vm": "Virtual Machines",
     "nsg": "Network Security Groups",
+    "frontdoor": "Front Door",
     "other": "Other",
 }
 
@@ -63,6 +73,17 @@ _PACK_DEFS: dict[str, Pack] = {
         ),
         policies_subdir="sql",
     ),
+    "sqlmi": Pack(
+        id="sqlmi",
+        resource_types=frozenset({"azurerm_mssql_managed_instance"}),
+        checkov_ids=(
+            "CKV_DRIFTARMOR_SQLMI_1",
+            "CKV_DRIFTARMOR_SQLMI_2",
+            "CKV_DRIFTARMOR_SQLMI_3",
+            "CKV_DRIFTARMOR_SQLMI_4",
+        ),
+        policies_subdir="sqlmi",
+    ),
     "storage": Pack(
         id="storage",
         resource_types=frozenset({"azurerm_storage_account"}),
@@ -104,6 +125,22 @@ _PACK_DEFS: dict[str, Pack] = {
             "CKV_DRIFTARMOR_NSG_3",
         ),
         policies_subdir="nsg",
+    ),
+    "frontdoor": Pack(
+        id="frontdoor",
+        resource_types=frozenset(
+            {
+                "azurerm_cdn_frontdoor_profile",
+                "azurerm_cdn_frontdoor_firewall_policy",
+                "azurerm_cdn_frontdoor_security_policy",
+            }
+        ),
+        checkov_ids=(
+            "CKV_DRIFTARMOR_FD_1",
+            "CKV_DRIFTARMOR_FD_2",
+            "CKV_DRIFTARMOR_FD_3",
+        ),
+        policies_subdir="frontdoor",
     ),
 }
 

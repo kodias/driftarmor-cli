@@ -1,0 +1,69 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.9.0",
+  "planned_values": {
+    "root_module": {
+      "resources": [
+        {
+          "address": "azurerm_mssql_managed_instance.main",
+          "mode": "managed",
+          "type": "azurerm_mssql_managed_instance",
+          "name": "main",
+          "provider_name": "registry.terraform.io/hashicorp/azurerm",
+          "values": {
+            "name": "demo-sqlmi",
+            "resource_group_name": "rg-demo",
+            "location": "eastus",
+            "license_type": "LicenseIncluded",
+            "sku_name": "GP_Gen5",
+            "vcores": 4,
+            "storage_size_in_gb": 32,
+            "subnet_id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-demo/providers/Microsoft.Network/virtualNetworks/vnet/subnets/sqlmi",
+            "public_data_endpoint_enabled": false,
+            "minimum_tls_version": "1.2",
+            "azuread_administrator": [
+              {
+                "login_username": "mi-admins",
+                "object_id": "11111111-1111-1111-1111-111111111111"
+              }
+            ],
+            "identity": [
+              {
+                "type": "SystemAssigned"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "resource_changes": [
+    {
+      "address": "azurerm_mssql_managed_instance.main",
+      "mode": "managed",
+      "type": "azurerm_mssql_managed_instance",
+      "name": "main",
+      "provider_name": "registry.terraform.io/hashicorp/azurerm",
+      "change": {
+        "actions": ["create"],
+        "before": null,
+        "after": {
+          "name": "demo-sqlmi",
+          "public_data_endpoint_enabled": false,
+          "minimum_tls_version": "1.2",
+          "azuread_administrator": [
+            {
+              "login_username": "mi-admins",
+              "object_id": "11111111-1111-1111-1111-111111111111"
+            }
+          ],
+          "identity": [
+            {
+              "type": "SystemAssigned"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -26,6 +26,10 @@ def test_detect_all_products_order():
             },
             {"type": "azurerm_mssql_server", "change": {"actions": ["create"]}},
             {
+                "type": "azurerm_mssql_managed_instance",
+                "change": {"actions": ["create"]},
+            },
+            {
                 "type": "azurerm_linux_virtual_machine",
                 "change": {"actions": ["create"]},
             },
@@ -33,14 +37,20 @@ def test_detect_all_products_order():
                 "type": "azurerm_network_security_group",
                 "change": {"actions": ["create"]},
             },
+            {
+                "type": "azurerm_cdn_frontdoor_profile",
+                "change": {"actions": ["create"]},
+            },
         ]
     }
     assert [p.id for p in detect_packs(plan)] == [
         "aks",
         "sql",
+        "sqlmi",
         "storage",
         "vm",
         "nsg",
+        "frontdoor",
     ]
 
 
@@ -58,6 +68,22 @@ def test_detect_vm_and_nsg():
         ]
     }
     assert [p.id for p in detect_packs(plan)] == ["vm", "nsg"]
+
+
+def test_detect_sqlmi_and_frontdoor():
+    plan = {
+        "resource_changes": [
+            {
+                "type": "azurerm_mssql_managed_instance",
+                "change": {"actions": ["create"]},
+            },
+            {
+                "type": "azurerm_cdn_frontdoor_firewall_policy",
+                "change": {"actions": ["create"]},
+            },
+        ]
+    }
+    assert [p.id for p in detect_packs(plan)] == ["sqlmi", "frontdoor"]
 
 
 def test_detect_aks_only():

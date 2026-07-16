@@ -108,5 +108,45 @@
     "title": "NSG must not allow all ports (*) from the Internet",
     "citation_url": "https://learn.microsoft.com/azure/virtual-network/network-security-groups-overview",
     "citation_verified": "2026-07-16"
+  },
+  "sqlmi.public_data_endpoint": {
+    "title": "SQL Managed Instance public data endpoint disabled",
+    "citation_url": "https://learn.microsoft.com/azure/azure-sql/managed-instance/public-endpoint-overview",
+    "citation_verified": "2026-07-16"
+  },
+  "sqlmi.min_tls": {
+    "title": "SQL Managed Instance minimum TLS 1.2+",
+    "citation_url": "https://learn.microsoft.com/azure/azure-sql/database/connectivity-architecture",
+    "citation_verified": "2026-07-16"
+  },
+  "sqlmi.entra_admin": {
+    "title": "SQL Managed Instance has Microsoft Entra administrator",
+    "citation_url": "https://learn.microsoft.com/azure/azure-sql/database/authentication-aad-overview",
+    "citation_verified": "2026-07-16"
+  },
+  "sqlmi.identity": {
+    "title": "SQL Managed Instance has a managed identity",
+    "citation_url": "https://learn.microsoft.com/entra/identity/managed-identities-azure-resources/overview",
+    "citation_verified": "2026-07-16"
+  },
+  "frontdoor.waf_attached": {
+    "title": "Front Door profile has a WAF policy in the plan",
+    "citation_url": "https://learn.microsoft.com/azure/web-application-firewall/afds/afds-overview",
+    "citation_verified": "2026-07-16"
+  },
+  "frontdoor.waf_enabled": {
+    "title": "Front Door WAF policy is enabled",
+    "citation_url": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-create-portal",
+    "citation_verified": "2026-07-16"
+  },
+  "frontdoor.waf_prevention": {
+    "title": "Front Door WAF policy mode is Prevention",
+    "citation_url": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-policy-settings",
+    "citation_verified": "2026-07-16"
+  },
+  "frontdoor.waf_managed_rules": {
+    "title": "Front Door WAF policy has managed rule sets",
+    "citation_url": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-drs",
+    "citation_verified": "2026-07-16"
   }
 }

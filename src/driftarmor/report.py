@@ -44,6 +44,13 @@ CHECKOV_TO_PRODUCT: dict[str, str] = {
     "CKV_DRIFTARMOR_NSG_1": "nsg.open_ssh_internet",
     "CKV_DRIFTARMOR_NSG_2": "nsg.open_rdp_internet",
     "CKV_DRIFTARMOR_NSG_3": "nsg.open_all_internet",
+    "CKV_DRIFTARMOR_SQLMI_1": "sqlmi.public_data_endpoint",
+    "CKV_DRIFTARMOR_SQLMI_2": "sqlmi.min_tls",
+    "CKV_DRIFTARMOR_SQLMI_3": "sqlmi.entra_admin",
+    "CKV_DRIFTARMOR_SQLMI_4": "sqlmi.identity",
+    "CKV_DRIFTARMOR_FD_1": "frontdoor.waf_enabled",
+    "CKV_DRIFTARMOR_FD_2": "frontdoor.waf_prevention",
+    "CKV_DRIFTARMOR_FD_3": "frontdoor.waf_managed_rules",
 }
 
 # Product rules evaluated via Checkov, ordered per pack.
@@ -62,6 +69,12 @@ PACK_AUTO_RULES: dict[str, tuple[str, ...]] = {
         "sql.firewall_any_ip",
         "sql.tde",
     ),
+    "sqlmi": (
+        "sqlmi.public_data_endpoint",
+        "sqlmi.min_tls",
+        "sqlmi.entra_admin",
+        "sqlmi.identity",
+    ),
     "storage": (
         "storage.https_only",
         "storage.min_tls",
@@ -79,6 +92,12 @@ PACK_AUTO_RULES: dict[str, tuple[str, ...]] = {
         "nsg.open_rdp_internet",
         "nsg.open_all_internet",
     ),
+    "frontdoor": (
+        "frontdoor.waf_attached",
+        "frontdoor.waf_enabled",
+        "frontdoor.waf_prevention",
+        "frontdoor.waf_managed_rules",
+    ),
 }
 
 # Only emit the rule when the plan contains at least one of these types.
@@ -90,6 +109,14 @@ RULE_REQUIRES_TYPES: dict[str, frozenset[str]] = {
     "sql.firewall_any_ip": frozenset({"azurerm_mssql_firewall_rule"}),
     "sql.tde": frozenset({"azurerm_mssql_database"}),
     "vm.linux_password_auth": frozenset({"azurerm_linux_virtual_machine"}),
+    "frontdoor.waf_attached": frozenset({"azurerm_cdn_frontdoor_profile"}),
+    "frontdoor.waf_enabled": frozenset({"azurerm_cdn_frontdoor_firewall_policy"}),
+    "frontdoor.waf_prevention": frozenset(
+        {"azurerm_cdn_frontdoor_firewall_policy"}
+    ),
+    "frontdoor.waf_managed_rules": frozenset(
+        {"azurerm_cdn_frontdoor_firewall_policy"}
+    ),
 }
 
 # When Checkov marks FAILED, map to this DriftArmor severity.
@@ -108,6 +135,10 @@ FAIL_SEVERITY: dict[str, Severity] = {
     "sql.min_tls": "fail",
     "sql.firewall_any_ip": "fail",
     "sql.tde": "fail",
+    "sqlmi.public_data_endpoint": "fail",
+    "sqlmi.min_tls": "fail",
+    "sqlmi.entra_admin": "fail",
+    "sqlmi.identity": "warn",
     "vm.encryption_at_host": "fail",
     "vm.trusted_launch": "fail",
     "vm.linux_password_auth": "fail",
@@ -115,6 +146,10 @@ FAIL_SEVERITY: dict[str, Severity] = {
     "nsg.open_ssh_internet": "fail",
     "nsg.open_rdp_internet": "fail",
     "nsg.open_all_internet": "fail",
+    "frontdoor.waf_attached": "fail",
+    "frontdoor.waf_enabled": "fail",
+    "frontdoor.waf_prevention": "fail",
+    "frontdoor.waf_managed_rules": "fail",
 }
 
 DEFAULT_TITLES: dict[str, str] = {
@@ -133,6 +168,10 @@ DEFAULT_TITLES: dict[str, str] = {
     "sql.min_tls": "Azure SQL server minimum TLS 1.2+",
     "sql.firewall_any_ip": "Azure SQL firewall must not allow 0.0.0.0-255.255.255.255",
     "sql.tde": "Azure SQL database transparent data encryption enabled",
+    "sqlmi.public_data_endpoint": "SQL Managed Instance public data endpoint disabled",
+    "sqlmi.min_tls": "SQL Managed Instance minimum TLS 1.2+",
+    "sqlmi.entra_admin": "SQL Managed Instance has Microsoft Entra administrator",
+    "sqlmi.identity": "SQL Managed Instance has a managed identity",
     "vm.encryption_at_host": "VM encryption at host enabled",
     "vm.trusted_launch": "VM Trusted Launch (secure boot + vTPM)",
     "vm.linux_password_auth": "Linux VM disables password authentication",
@@ -140,6 +179,10 @@ DEFAULT_TITLES: dict[str, str] = {
     "nsg.open_ssh_internet": "NSG must not allow SSH (22) from the Internet",
     "nsg.open_rdp_internet": "NSG must not allow RDP (3389) from the Internet",
     "nsg.open_all_internet": "NSG must not allow all ports (*) from the Internet",
+    "frontdoor.waf_attached": "Front Door profile has a WAF policy in the plan",
+    "frontdoor.waf_enabled": "Front Door WAF policy is enabled",
+    "frontdoor.waf_prevention": "Front Door WAF policy mode is Prevention",
+    "frontdoor.waf_managed_rules": "Front Door WAF policy has managed rule sets",
 }
 
 DEFAULT_FAIL_DETAIL: dict[str, str] = {
@@ -157,6 +200,10 @@ DEFAULT_FAIL_DETAIL: dict[str, str] = {
     "sql.min_tls": "minimum_tls_version is below 1.2 or unset",
     "sql.firewall_any_ip": "firewall rule allows 0.0.0.0-255.255.255.255",
     "sql.tde": "transparent_data_encryption_enabled is false",
+    "sqlmi.public_data_endpoint": "public_data_endpoint_enabled is true",
+    "sqlmi.min_tls": "minimum_tls_version is below 1.2",
+    "sqlmi.entra_admin": "azuread_administrator block missing on azurerm_mssql_managed_instance",
+    "sqlmi.identity": "identity block missing or type unset",
     "vm.encryption_at_host": "encryption_at_host_enabled is false or unset",
     "vm.trusted_launch": "secure_boot_enabled and/or vtpm_enabled not both true",
     "vm.linux_password_auth": "disable_password_authentication is false",
@@ -164,6 +211,13 @@ DEFAULT_FAIL_DETAIL: dict[str, str] = {
     "nsg.open_ssh_internet": "Inbound Allow from Internet to destination port 22",
     "nsg.open_rdp_internet": "Inbound Allow from Internet to destination port 3389",
     "nsg.open_all_internet": "Inbound Allow from Internet to destination port *",
+    "frontdoor.waf_attached": (
+        "No azurerm_cdn_frontdoor_firewall_policy or "
+        "azurerm_cdn_frontdoor_security_policy in plan"
+    ),
+    "frontdoor.waf_enabled": "enabled is false on azurerm_cdn_frontdoor_firewall_policy",
+    "frontdoor.waf_prevention": "mode is not Prevention",
+    "frontdoor.waf_managed_rules": "managed_rule block missing on WAF policy",
 }
 
 # Backward-compatible alias used by older tests / imports.
@@ -246,6 +300,18 @@ def _apply_plan_ors(
 
         oms_ok = adjusted.get("aks.monitor.oms_or_dcr") == "PASSED" or plan_has_dcr(plan)
         adjusted["aks.monitor.oms_or_dcr"] = "PASSED" if oms_ok else "FAILED"
+
+    if "frontdoor" in pack_ids:
+        types = plan_resource_types(plan)
+        if "azurerm_cdn_frontdoor_profile" in types:
+            waf_ok = bool(
+                types
+                & {
+                    "azurerm_cdn_frontdoor_firewall_policy",
+                    "azurerm_cdn_frontdoor_security_policy",
+                }
+            )
+            adjusted["frontdoor.waf_attached"] = "PASSED" if waf_ok else "FAILED"
 
     return adjusted
 

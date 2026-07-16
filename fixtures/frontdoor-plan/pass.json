@@ -1,0 +1,105 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.9.0",
+  "planned_values": {
+    "root_module": {
+      "resources": [
+        {
+          "address": "azurerm_cdn_frontdoor_profile.main",
+          "mode": "managed",
+          "type": "azurerm_cdn_frontdoor_profile",
+          "name": "main",
+          "provider_name": "registry.terraform.io/hashicorp/azurerm",
+          "values": {
+            "name": "demo-afd",
+            "resource_group_name": "rg-demo",
+            "sku_name": "Premium_AzureFrontDoor"
+          }
+        },
+        {
+          "address": "azurerm_cdn_frontdoor_firewall_policy.main",
+          "mode": "managed",
+          "type": "azurerm_cdn_frontdoor_firewall_policy",
+          "name": "main",
+          "provider_name": "registry.terraform.io/hashicorp/azurerm",
+          "values": {
+            "name": "demoafdwaf",
+            "resource_group_name": "rg-demo",
+            "sku_name": "Premium_AzureFrontDoor",
+            "enabled": true,
+            "mode": "Prevention",
+            "managed_rule": [
+              {
+                "type": "Microsoft_DefaultRuleSet",
+                "version": "2.1",
+                "action": "Block"
+              }
+            ]
+          }
+        },
+        {
+          "address": "azurerm_cdn_frontdoor_security_policy.main",
+          "mode": "managed",
+          "type": "azurerm_cdn_frontdoor_security_policy",
+          "name": "main",
+          "provider_name": "registry.terraform.io/hashicorp/azurerm",
+          "values": {
+            "name": "demo-sec",
+            "cdn_frontdoor_profile_id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-demo/providers/Microsoft.Cdn/profiles/demo-afd"
+          }
+        }
+      ]
+    }
+  },
+  "resource_changes": [
+    {
+      "address": "azurerm_cdn_frontdoor_profile.main",
+      "mode": "managed",
+      "type": "azurerm_cdn_frontdoor_profile",
+      "name": "main",
+      "change": {
+        "actions": ["create"],
+        "before": null,
+        "after": {
+          "name": "demo-afd",
+          "sku_name": "Premium_AzureFrontDoor"
+        }
+      }
+    },
+    {
+      "address": "azurerm_cdn_frontdoor_firewall_policy.main",
+      "mode": "managed",
+      "type": "azurerm_cdn_frontdoor_firewall_policy",
+      "name": "main",
+      "change": {
+        "actions": ["create"],
+        "before": null,
+        "after": {
+          "name": "demoafdwaf",
+          "enabled": true,
+          "mode": "Prevention",
+          "managed_rule": [
+            {
+              "type": "Microsoft_DefaultRuleSet",
+              "version": "2.1",
+              "action": "Block"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "address": "azurerm_cdn_frontdoor_security_policy.main",
+      "mode": "managed",
+      "type": "azurerm_cdn_frontdoor_security_policy",
+      "name": "main",
+      "change": {
+        "actions": ["create"],
+        "before": null,
+        "after": {
+          "name": "demo-sec"
+        }
+      }
+    }
+  ]
+}

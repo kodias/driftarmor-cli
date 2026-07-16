@@ -4,7 +4,7 @@ Local implement coach for Azure Terraform plans (`check`), plus a
 **destructive-change gate** on plan JSON (`drift`). Wraps **Checkov** custom
 policies for `check` and prints citation checklists with exit codes.
 
-Active `check` packs (report order): **AKS** → **Azure SQL** → **Storage** → **VM** → **NSG**.
+Active `check` packs (report order): **AKS** → **Azure SQL** → **SQL Managed Instance** → **Storage** → **VM** → **NSG** → **Front Door**.
 `drift` groups the same way (plus **Other** for unmatched types).
 
 Product / marketing site: [driftarmor.net](https://www.driftarmor.net)
@@ -29,7 +29,7 @@ pip install -e ".[dev]"
 terraform plan -out=tfplan
 terraform show -json tfplan > plan.json
 
-# Implement coach (Checkov packs + citations) — AKS / SQL / Storage / VM / NSG
+# Implement coach (Checkov packs + citations)
 driftarmor check --plan plan.json
 driftarmor check --plan plan.json --json
 driftarmor check --plan plan.json --no-color
@@ -54,12 +54,14 @@ Large plan files are loaded fully into memory (same as `check`).
 ## Fixtures
 
 ```bash
-driftarmor check --plan fixtures/aks-plan/fail.json       # exit 1
-driftarmor check --plan fixtures/storage-plan/pass.json   # exit 0
-driftarmor check --plan fixtures/sql-plan/fail.json       # exit 1
-driftarmor check --plan fixtures/vm-plan/fail.json        # exit 1
-driftarmor check --plan fixtures/nsg-plan/pass.json       # exit 0
-driftarmor drift --plan fixtures/drift-plan/replace.json  # exit 1
+driftarmor check --plan fixtures/aks-plan/fail.json          # exit 1
+driftarmor check --plan fixtures/storage-plan/pass.json      # exit 0
+driftarmor check --plan fixtures/sql-plan/fail.json          # exit 1
+driftarmor check --plan fixtures/sqlmi-plan/pass.json        # exit 0
+driftarmor check --plan fixtures/vm-plan/fail.json           # exit 1
+driftarmor check --plan fixtures/nsg-plan/pass.json          # exit 0
+driftarmor check --plan fixtures/frontdoor-plan/fail.json    # exit 1
+driftarmor drift --plan fixtures/drift-plan/replace.json     # exit 1
 pytest
 ```
 
@@ -67,15 +69,33 @@ pytest
 
 - `check` — Checkov policy packs (auto-detected from plan resources):
   - **AKS** — `azurerm_kubernetes_cluster` (+ node pools)
-  - **Storage** — `azurerm_storage_account` (HTTPS, TLS, public blobs, network)
   - **Azure SQL** — `azurerm_mssql_server` / `_database` / `_firewall_rule`
+  - **SQL Managed Instance** — `azurerm_mssql_managed_instance`
+  - **Storage** — `azurerm_storage_account` (HTTPS, TLS, public blobs, network)
   - **VM** — `azurerm_linux_virtual_machine` / `azurerm_windows_virtual_machine`
   - **NSG** — `azurerm_network_security_group` / `azurerm_network_security_rule`
+  - **Front Door** — `azurerm_cdn_frontdoor_profile` / `_firewall_policy` / `_security_policy`
 - `drift` — provider-agnostic plan-diff (any Terraform plan JSON)
 
-### Virtual Machines (new)
+### SQL Managed Instance
 
-Detected when the plan includes Linux or Windows VMs. Rules:
+| Rule id | Severity on fail | What it checks |
+|---------|------------------|----------------|
+| `sqlmi.public_data_endpoint` | fail | `public_data_endpoint_enabled` must not be true |
+| `sqlmi.min_tls` | fail | `minimum_tls_version` 1.2+ |
+| `sqlmi.entra_admin` | fail | `azuread_administrator` block |
+| `sqlmi.identity` | warn | `identity` block (SystemAssigned / UserAssigned) |
+
+### Front Door
+
+| Rule id | Severity on fail | What it checks |
+|---------|------------------|----------------|
+| `frontdoor.waf_attached` | fail | Profile plan includes a WAF / security policy resource |
+| `frontdoor.waf_enabled` | fail | Firewall policy `enabled` is not false |
+| `frontdoor.waf_prevention` | fail | Firewall policy `mode` is `Prevention` |
+| `frontdoor.waf_managed_rules` | fail | Firewall policy has a `managed_rule` block |
+
+### Virtual Machines
 
 | Rule id | Severity on fail | What it checks |
 |---------|------------------|----------------|
@@ -84,9 +104,7 @@ Detected when the plan includes Linux or Windows VMs. Rules:
 | `vm.linux_password_auth` | fail | Linux only: `disable_password_authentication` |
 | `vm.managed_identity` | warn | `identity` block (SystemAssigned / UserAssigned) |
 
-### Network Security Groups (new)
-
-Detected for NSGs and standalone security rules (inline `security_rule` or `azurerm_network_security_rule`). Rules:
+### Network Security Groups
 
 | Rule id | Severity on fail | What it checks |
 |---------|------------------|----------------|

@@ -31,3 +31,10 @@ testpaths = ["tests"]
 markers = [
   "integration: requires checkov binary on PATH",
 ]
+
+# Transitive Checkov deps: pin patched aiohttp for Dependabot CVEs.
+[tool.uv]
+# Force patched aiohttp past Checkov's upper bound (<3.14.0 on 3.3.x).
+override-dependencies = [
+  "aiohttp>=3.14.1",
+]

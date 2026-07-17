@@ -49,6 +49,51 @@
     "citation_url": "https://learn.microsoft.com/azure/storage/common/storage-network-security-overview",
     "citation_verified": "2026-07-13"
   },
+  "keyvault.rbac_authorization": {
+    "title": "Key Vault uses Azure RBAC authorization",
+    "citation_url": "https://learn.microsoft.com/azure/key-vault/general/rbac-access-policy",
+    "citation_verified": "2026-07-17"
+  },
+  "keyvault.purge_protection": {
+    "title": "Key Vault purge protection enabled",
+    "citation_url": "https://learn.microsoft.com/azure/key-vault/general/soft-delete-overview#purge-protection",
+    "citation_verified": "2026-07-17"
+  },
+  "keyvault.network_restricted": {
+    "title": "Key Vault public access disabled or network ACLs deny by default",
+    "citation_url": "https://learn.microsoft.com/azure/key-vault/general/network-security",
+    "citation_verified": "2026-07-17"
+  },
+  "acr.admin_disabled": {
+    "title": "Container Registry admin account disabled",
+    "citation_url": "https://learn.microsoft.com/azure/container-registry/policy-reference",
+    "citation_verified": "2026-07-17"
+  },
+  "acr.anonymous_pull_disabled": {
+    "title": "Container Registry anonymous pull disabled",
+    "citation_url": "https://learn.microsoft.com/azure/container-registry/anonymous-pull-access",
+    "citation_verified": "2026-07-17"
+  },
+  "acr.network_restricted": {
+    "title": "Container Registry public access disabled or network rules deny by default",
+    "citation_url": "https://learn.microsoft.com/azure/container-registry/container-registry-access-selected-networks",
+    "citation_verified": "2026-07-17"
+  },
+  "servicebus.local_authentication": {
+    "title": "Service Bus local/SAS authentication disabled",
+    "citation_url": "https://learn.microsoft.com/azure/service-bus-messaging/disable-local-authentication",
+    "citation_verified": "2026-07-17"
+  },
+  "servicebus.min_tls": {
+    "title": "Service Bus minimum TLS 1.2",
+    "citation_url": "https://learn.microsoft.com/azure/service-bus-messaging/transport-layer-security-enforce-minimum-version",
+    "citation_verified": "2026-07-17"
+  },
+  "servicebus.network_restricted": {
+    "title": "Service Bus public access disabled or network rules deny by default",
+    "citation_url": "https://learn.microsoft.com/azure/service-bus-messaging/network-security",
+    "citation_verified": "2026-07-17"
+  },
   "sql.public_network": {
     "title": "Azure SQL server public network access disabled",
     "citation_url": "https://learn.microsoft.com/azure/azure-sql/database/connectivity-settings#deny-public-network-access",

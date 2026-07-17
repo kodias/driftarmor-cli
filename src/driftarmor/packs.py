@@ -12,6 +12,9 @@ PRODUCT_ORDER: tuple[str, ...] = (
     "sql",
     "sqlmi",
     "storage",
+    "keyvault",
+    "acr",
+    "servicebus",
     "vm",
     "nsg",
     "frontdoor",
@@ -22,6 +25,9 @@ PRODUCT_TITLES: dict[str, str] = {
     "sql": "Azure SQL",
     "sqlmi": "SQL Managed Instance",
     "storage": "Storage",
+    "keyvault": "Key Vault",
+    "acr": "Azure Container Registry",
+    "servicebus": "Service Bus",
     "vm": "Virtual Machines",
     "nsg": "Network Security Groups",
     "frontdoor": "Front Door",
@@ -35,6 +41,14 @@ class Pack:
     resource_types: frozenset[str]
     checkov_ids: tuple[str, ...]
     policies_subdir: str
+    check_resource_types: frozenset[str] | None = None
+
+    @property
+    def detection_resource_types(self) -> frozenset[str]:
+        """Types that activate checks, independent of drift classification."""
+        if self.check_resource_types is not None:
+            return self.check_resource_types
+        return self.resource_types
 
 
 _PACK_DEFS: dict[str, Pack] = {
@@ -94,6 +108,45 @@ _PACK_DEFS: dict[str, Pack] = {
             "CKV_DRIFTARMOR_STORAGE_4",
         ),
         policies_subdir="storage",
+    ),
+    "keyvault": Pack(
+        id="keyvault",
+        resource_types=frozenset({"azurerm_key_vault"}),
+        checkov_ids=(
+            "CKV_DRIFTARMOR_KV_1",
+            "CKV_DRIFTARMOR_KV_2",
+            "CKV_DRIFTARMOR_KV_3",
+        ),
+        policies_subdir="keyvault",
+    ),
+    "acr": Pack(
+        id="acr",
+        resource_types=frozenset({"azurerm_container_registry"}),
+        checkov_ids=(
+            "CKV_DRIFTARMOR_ACR_1",
+            "CKV_DRIFTARMOR_ACR_2",
+            "CKV_DRIFTARMOR_ACR_3",
+        ),
+        policies_subdir="acr",
+    ),
+    "servicebus": Pack(
+        id="servicebus",
+        resource_types=frozenset(
+            {
+                "azurerm_servicebus_namespace",
+                "azurerm_servicebus_namespace_network_rule_set",
+                "azurerm_servicebus_queue",
+                "azurerm_servicebus_topic",
+                "azurerm_servicebus_subscription",
+            }
+        ),
+        checkov_ids=(
+            "CKV_DRIFTARMOR_SB_1",
+            "CKV_DRIFTARMOR_SB_2",
+            "CKV_DRIFTARMOR_SB_3",
+        ),
+        policies_subdir="servicebus",
+        check_resource_types=frozenset({"azurerm_servicebus_namespace"}),
     ),
     "vm": Pack(
         id="vm",
@@ -165,8 +218,21 @@ def product_sort_key(product_id: str) -> tuple[int, str]:
 
 
 def plan_resource_types(plan: dict[str, Any]) -> set[str]:
+    """Return managed resource types that remain after the plan.
+
+    Data-source reads, deletes, and state-only forget actions have no post-plan
+    managed resource for Checkov to evaluate, so they must not activate a pack.
+    """
     types: set[str] = set()
     for change in plan.get("resource_changes") or []:
+        if not isinstance(change, dict):
+            continue
+        if change.get("mode") == "data":
+            continue
+        change_body = change.get("change") or {}
+        actions = change_body.get("actions") if isinstance(change_body, dict) else None
+        if actions in (["read"], ["delete"], ["forget"]):
+            continue
         t = change.get("type")
         if isinstance(t, str):
             types.add(t)
@@ -176,4 +242,4 @@ def plan_resource_types(plan: dict[str, Any]) -> set[str]:
 def detect_packs(plan: dict[str, Any]) -> list[Pack]:
     """Return packs that match resource types in the plan (product order)."""
     types = plan_resource_types(plan)
-    return [p for p in PACKS if types & p.resource_types]
+    return [p for p in PACKS if types & p.detection_resource_types]

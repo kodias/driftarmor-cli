@@ -1,0 +1,48 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.9.0",
+  "planned_values": {
+    "root_module": {
+      "resources": [
+        {
+          "address": "azurerm_container_registry.main",
+          "mode": "managed",
+          "type": "azurerm_container_registry",
+          "name": "main",
+          "provider_name": "registry.terraform.io/hashicorp/azurerm",
+          "values": {
+            "name": "demosecureacr",
+            "resource_group_name": "rg-demo",
+            "location": "eastus",
+            "sku": "Premium",
+            "admin_enabled": false,
+            "anonymous_pull_enabled": false,
+            "public_network_access_enabled": false
+          }
+        }
+      ]
+    }
+  },
+  "resource_changes": [
+    {
+      "address": "azurerm_container_registry.main",
+      "mode": "managed",
+      "type": "azurerm_container_registry",
+      "name": "main",
+      "provider_name": "registry.terraform.io/hashicorp/azurerm",
+      "change": {
+        "actions": ["create"],
+        "before": null,
+        "after": {
+          "name": "demosecureacr",
+          "resource_group_name": "rg-demo",
+          "location": "eastus",
+          "sku": "Premium",
+          "admin_enabled": false,
+          "anonymous_pull_enabled": false,
+          "public_network_access_enabled": false
+        }
+      }
+    }
+  ]
+}

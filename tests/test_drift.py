@@ -113,6 +113,25 @@ def test_build_report_groups_by_product_order():
     ]
 
 
+def test_servicebus_entity_changes_remain_grouped_for_drift():
+    plan = {
+        "resource_changes": [
+            {
+                "address": "azurerm_servicebus_queue.orders",
+                "type": "azurerm_servicebus_queue",
+                "name": "orders",
+                "change": {"actions": ["delete"]},
+            }
+        ]
+    }
+
+    report = build_drift_report(plan)
+
+    assert [product["id"] for product in report["products"]] == ["servicebus"]
+    assert report["results"][0]["product"] == "servicebus"
+    assert exit_code_for_drift(report) == 1
+
+
 def test_exit_code_replace():
     report = {
         "summary": {"create": 0, "update": 0, "delete": 0, "replace": 1},

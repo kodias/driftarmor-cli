@@ -20,6 +20,9 @@ def test_detect_all_products_order():
     plan = {
         "resource_changes": [
             {"type": "azurerm_storage_account", "change": {"actions": ["create"]}},
+            {"type": "azurerm_key_vault", "change": {"actions": ["create"]}},
+            {"type": "azurerm_container_registry", "change": {"actions": ["create"]}},
+            {"type": "azurerm_servicebus_namespace", "change": {"actions": ["create"]}},
             {
                 "type": "azurerm_kubernetes_cluster",
                 "change": {"actions": ["create"]},
@@ -48,6 +51,9 @@ def test_detect_all_products_order():
         "sql",
         "sqlmi",
         "storage",
+        "keyvault",
+        "acr",
+        "servicebus",
         "vm",
         "nsg",
         "frontdoor",
@@ -105,4 +111,42 @@ def test_detect_none():
             {"type": "azurerm_resource_group", "change": {"actions": ["create"]}}
         ]
     }
+    assert detect_packs(plan) == []
+
+
+def test_detect_ignores_data_sources_and_resources_absent_after_plan():
+    plan = {
+        "resource_changes": [
+            {
+                "mode": "data",
+                "type": "azurerm_key_vault",
+                "change": {"actions": ["read"]},
+            },
+            {
+                "mode": "managed",
+                "type": "azurerm_storage_account",
+                "change": {"actions": ["delete"], "after": None},
+            },
+            {
+                "mode": "managed",
+                "type": "azurerm_container_registry",
+                "change": {"actions": ["forget"], "after": None},
+            },
+        ]
+    }
+
+    assert detect_packs(plan) == []
+
+
+def test_servicebus_entity_without_namespace_does_not_activate_empty_pack():
+    plan = {
+        "resource_changes": [
+            {
+                "mode": "managed",
+                "type": "azurerm_servicebus_queue",
+                "change": {"actions": ["create"]},
+            }
+        ]
+    }
+
     assert detect_packs(plan) == []

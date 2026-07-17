@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "driftarmor"
 version = "0.1.0"
-description = "Checkov-backed Azure Terraform plan implement coach (AKS / SQL / SQL MI / Storage / VM / NSG / Front Door)"
+description = "Checkov-backed Azure Terraform plan implement coach (AKS / SQL / SQL MI / Storage / Key Vault / ACR / Service Bus / VM / NSG / Front Door)"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -19,7 +19,12 @@ dev = ["pytest>=8.0"]
 driftarmor = "driftarmor.cli:main"
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["src", "."]
+include = ["driftarmor*", "policies*"]
+namespaces = false
+
+[tool.setuptools.package-data]
+policies = ["citations.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

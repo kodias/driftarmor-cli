@@ -1,0 +1,62 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.9.0",
+  "planned_values": {
+    "root_module": {
+      "resources": [
+        {
+          "address": "azurerm_servicebus_namespace.main",
+          "mode": "managed",
+          "type": "azurerm_servicebus_namespace",
+          "name": "main",
+          "provider_name": "registry.terraform.io/hashicorp/azurerm",
+          "values": {
+            "name": "driftarmor-secure-sb",
+            "resource_group_name": "rg-driftarmor-demo",
+            "location": "eastus",
+            "sku": "Premium",
+            "capacity": 1,
+            "local_auth_enabled": false,
+            "minimum_tls_version": "1.2",
+            "public_network_access_enabled": true,
+            "network_rule_set": [
+              {
+                "default_action": "Deny",
+                "trusted_services_allowed": true
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "resource_changes": [
+    {
+      "address": "azurerm_servicebus_namespace.main",
+      "mode": "managed",
+      "type": "azurerm_servicebus_namespace",
+      "name": "main",
+      "provider_name": "registry.terraform.io/hashicorp/azurerm",
+      "change": {
+        "actions": ["create"],
+        "before": null,
+        "after": {
+          "name": "driftarmor-secure-sb",
+          "resource_group_name": "rg-driftarmor-demo",
+          "location": "eastus",
+          "sku": "Premium",
+          "capacity": 1,
+          "local_auth_enabled": false,
+          "minimum_tls_version": "1.2",
+          "public_network_access_enabled": true,
+          "network_rule_set": [
+            {
+              "default_action": "Deny",
+              "trusted_services_allowed": true
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

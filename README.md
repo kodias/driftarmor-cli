@@ -4,7 +4,7 @@ Local implement coach for Azure Terraform plans (`check`), plus a
 **destructive-change gate** on plan JSON (`drift`). Wraps **Checkov** custom
 policies for `check` and prints citation checklists with exit codes.
 
-Active `check` packs (report order): **AKS** → **Azure SQL** → **SQL Managed Instance** → **Storage** → **VM** → **NSG** → **Front Door**.
+Active `check` packs (report order): **AKS** → **Azure SQL** → **SQL Managed Instance** → **Storage** → **Key Vault** → **ACR** → **Service Bus** → **VM** → **NSG** → **Front Door**.
 `drift` groups the same way (plus **Other** for unmatched types).
 
 Product / marketing site: [driftarmor.net](https://www.driftarmor.net)
@@ -58,6 +58,9 @@ driftarmor check --plan fixtures/aks-plan/fail.json          # exit 1
 driftarmor check --plan fixtures/storage-plan/pass.json      # exit 0
 driftarmor check --plan fixtures/sql-plan/fail.json          # exit 1
 driftarmor check --plan fixtures/sqlmi-plan/pass.json        # exit 0
+driftarmor check --plan fixtures/keyvault-plan/fail.json     # exit 1
+driftarmor check --plan fixtures/acr-plan/pass.json          # exit 0
+driftarmor check --plan fixtures/servicebus-plan/fail.json   # exit 1
 driftarmor check --plan fixtures/vm-plan/fail.json           # exit 1
 driftarmor check --plan fixtures/nsg-plan/pass.json          # exit 0
 driftarmor check --plan fixtures/frontdoor-plan/fail.json    # exit 1
@@ -72,10 +75,15 @@ pytest
   - **Azure SQL** — `azurerm_mssql_server` / `_database` / `_firewall_rule`
   - **SQL Managed Instance** — `azurerm_mssql_managed_instance`
   - **Storage** — `azurerm_storage_account` (HTTPS, TLS, public blobs, network)
+  - **Key Vault** — `azurerm_key_vault` (RBAC, purge protection, network)
+  - **ACR** — `azurerm_container_registry` (local auth, anonymous pull, network)
+  - **Service Bus** — `azurerm_servicebus_namespace` (auth, TLS, inline network rules)
   - **VM** — `azurerm_linux_virtual_machine` / `azurerm_windows_virtual_machine`
   - **NSG** — `azurerm_network_security_group` / `azurerm_network_security_rule`
   - **Front Door** — `azurerm_cdn_frontdoor_profile` / `_firewall_policy` / `_security_policy`
-- `drift` — provider-agnostic plan-diff (any Terraform plan JSON)
+- `drift` — provider-agnostic plan-diff (any Terraform plan JSON); Service Bus
+  queues, topics, subscriptions, and legacy standalone network rules are grouped
+  with the Service Bus product even though they do not activate namespace checks
 
 ### AKS
 
@@ -115,6 +123,30 @@ pytest
 | `storage.min_tls` | fail | `min_tls_version` TLS 1.2+ |
 | `storage.blob_public_access` | fail | Public blob / nested public access disabled |
 | `storage.network_restricted` | warn | Public network off **or** network rules `default_action = Deny` |
+
+### Key Vault
+
+| Rule id | Severity on fail | What it checks |
+|---------|------------------|----------------|
+| `keyvault.rbac_authorization` | fail | Azure RBAC authorization enabled |
+| `keyvault.purge_protection` | fail | `purge_protection_enabled` is true |
+| `keyvault.network_restricted` | warn | Public network off **or** network ACLs `default_action = Deny` |
+
+### Azure Container Registry
+
+| Rule id | Severity on fail | What it checks |
+|---------|------------------|----------------|
+| `acr.admin_disabled` | fail | Local admin account disabled |
+| `acr.anonymous_pull_disabled` | fail | Anonymous image pulls disabled |
+| `acr.network_restricted` | warn | Public network off **or** network rules `default_action = Deny` |
+
+### Service Bus
+
+| Rule id | Severity on fail | What it checks |
+|---------|------------------|----------------|
+| `servicebus.local_authentication` | fail | Local/SAS authentication disabled in favor of Microsoft Entra ID |
+| `servicebus.min_tls` | fail | `minimum_tls_version` is 1.2 |
+| `servicebus.network_restricted` | warn | Public network off **or** namespace network rules default to Deny |
 
 ### Virtual Machines
 

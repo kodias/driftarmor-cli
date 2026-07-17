@@ -20,6 +20,7 @@ def test_detect_all_products_order():
     plan = {
         "resource_changes": [
             {"type": "azurerm_storage_account", "change": {"actions": ["create"]}},
+            {"type": "azurerm_managed_redis", "change": {"actions": ["create"]}},
             {"type": "azurerm_key_vault", "change": {"actions": ["create"]}},
             {"type": "azurerm_container_registry", "change": {"actions": ["create"]}},
             {"type": "azurerm_servicebus_namespace", "change": {"actions": ["create"]}},
@@ -51,6 +52,7 @@ def test_detect_all_products_order():
         "sql",
         "sqlmi",
         "storage",
+        "redis",
         "keyvault",
         "acr",
         "servicebus",
@@ -90,6 +92,18 @@ def test_detect_sqlmi_and_frontdoor():
         ]
     }
     assert [p.id for p in detect_packs(plan)] == ["sqlmi", "frontdoor"]
+
+
+def test_detect_redis():
+    plan = {
+        "resource_changes": [
+            {
+                "type": "azurerm_managed_redis",
+                "change": {"actions": ["create"]},
+            }
+        ]
+    }
+    assert [p.id for p in detect_packs(plan)] == ["redis"]
 
 
 def test_detect_aks_only():

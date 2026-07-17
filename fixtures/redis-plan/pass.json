@@ -1,0 +1,66 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.9.0",
+  "planned_values": {
+    "root_module": {
+      "resources": [
+        {
+          "address": "azurerm_managed_redis.main",
+          "mode": "managed",
+          "type": "azurerm_managed_redis",
+          "name": "main",
+          "provider_name": "registry.terraform.io/hashicorp/azurerm",
+          "values": {
+            "name": "demo-managed-redis",
+            "resource_group_name": "rg-demo",
+            "location": "eastus",
+            "sku_name": "Balanced_B3",
+            "public_network_access": "Disabled",
+            "high_availability_enabled": true,
+            "identity": [
+              {
+                "type": "SystemAssigned"
+              }
+            ],
+            "default_database": [
+              {
+                "client_protocol": "Encrypted",
+                "access_keys_authentication_enabled": false,
+                "clustering_policy": "OSSCluster"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "resource_changes": [
+    {
+      "address": "azurerm_managed_redis.main",
+      "mode": "managed",
+      "type": "azurerm_managed_redis",
+      "name": "main",
+      "provider_name": "registry.terraform.io/hashicorp/azurerm",
+      "change": {
+        "actions": ["create"],
+        "before": null,
+        "after": {
+          "name": "demo-managed-redis",
+          "sku_name": "Balanced_B3",
+          "public_network_access": "Disabled",
+          "identity": [
+            {
+              "type": "SystemAssigned"
+            }
+          ],
+          "default_database": [
+            {
+              "client_protocol": "Encrypted",
+              "access_keys_authentication_enabled": false
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

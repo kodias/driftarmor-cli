@@ -4,7 +4,7 @@ Local implement coach for Azure Terraform plans (`check`), plus a
 **destructive-change gate** on plan JSON (`drift`). Wraps **Checkov** custom
 policies for `check` and prints citation checklists with exit codes.
 
-Active `check` packs (report order): **AKS** → **Azure SQL** → **SQL Managed Instance** → **Storage** → **Key Vault** → **ACR** → **Service Bus** → **VM** → **NSG** → **Front Door**.
+Active `check` packs (report order): **AKS** → **Azure SQL** → **SQL Managed Instance** → **Storage** → **Managed Redis** → **Key Vault** → **ACR** → **Service Bus** → **VM** → **NSG** → **Front Door**.
 `drift` groups the same way (plus **Other** for unmatched types).
 
 Product / marketing site: [driftarmor.net](https://www.driftarmor.net)
@@ -58,6 +58,7 @@ driftarmor check --plan fixtures/aks-plan/fail.json          # exit 1
 driftarmor check --plan fixtures/storage-plan/pass.json      # exit 0
 driftarmor check --plan fixtures/sql-plan/fail.json          # exit 1
 driftarmor check --plan fixtures/sqlmi-plan/pass.json        # exit 0
+driftarmor check --plan fixtures/redis-plan/pass.json        # exit 0
 driftarmor check --plan fixtures/keyvault-plan/fail.json     # exit 1
 driftarmor check --plan fixtures/acr-plan/pass.json          # exit 0
 driftarmor check --plan fixtures/servicebus-plan/fail.json   # exit 1
@@ -75,6 +76,7 @@ pytest
   - **Azure SQL** — `azurerm_mssql_server` / `_database` / `_firewall_rule`
   - **SQL Managed Instance** — `azurerm_mssql_managed_instance`
   - **Storage** — `azurerm_storage_account` (HTTPS, TLS, public blobs, network)
+  - **Managed Redis** — `azurerm_managed_redis`
   - **Key Vault** — `azurerm_key_vault` (RBAC, purge protection, network)
   - **ACR** — `azurerm_container_registry` (local auth, anonymous pull, network)
   - **Service Bus** — `azurerm_servicebus_namespace` (auth, TLS, inline network rules)
@@ -123,6 +125,15 @@ pytest
 | `storage.min_tls` | fail | `min_tls_version` TLS 1.2+ |
 | `storage.blob_public_access` | fail | Public blob / nested public access disabled |
 | `storage.network_restricted` | warn | Public network off **or** network rules `default_action = Deny` |
+
+### Managed Redis
+
+| Rule id | Severity on fail | What it checks |
+|---------|------------------|----------------|
+| `redis.public_network` | fail | `public_network_access` is `Disabled` |
+| `redis.client_protocol` | fail | `default_database.client_protocol` is `Encrypted` (default) |
+| `redis.access_keys_auth` | fail | `access_keys_authentication_enabled` must not be true |
+| `redis.identity` | warn | `identity` block (SystemAssigned / UserAssigned) |
 
 ### Key Vault
 

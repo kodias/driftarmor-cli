@@ -193,5 +193,25 @@
     "title": "Front Door WAF policy has managed rule sets",
     "citation_url": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-drs",
     "citation_verified": "2026-07-16"
+  },
+  "redis.public_network": {
+    "title": "Managed Redis public network access disabled",
+    "citation_url": "https://learn.microsoft.com/azure/redis/how-to-private-link",
+    "citation_verified": "2026-07-17"
+  },
+  "redis.client_protocol": {
+    "title": "Managed Redis client protocol is Encrypted",
+    "citation_url": "https://learn.microsoft.com/azure/redis/overview",
+    "citation_verified": "2026-07-17"
+  },
+  "redis.access_keys_auth": {
+    "title": "Managed Redis access key authentication disabled",
+    "citation_url": "https://learn.microsoft.com/azure/redis/entra-for-authentication",
+    "citation_verified": "2026-07-17"
+  },
+  "redis.identity": {
+    "title": "Managed Redis has a managed identity",
+    "citation_url": "https://learn.microsoft.com/entra/identity/managed-identities-azure-resources/overview",
+    "citation_verified": "2026-07-17"
   }
 }

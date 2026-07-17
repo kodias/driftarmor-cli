@@ -184,6 +184,29 @@ def test_frontdoor_fail_exit_1(capsys):
     assert by_id["frontdoor.waf_managed_rules"]["severity"] == "fail"
 
 
+def test_redis_pass_exit_0(capsys):
+    path = ROOT / "fixtures" / "redis-plan" / "pass.json"
+    code = main(["check", "--plan", str(path), "--json"])
+    assert code == 0
+    report = json.loads(capsys.readouterr().out)
+    assert report["summary"]["fail"] == 0
+    ids = {r["id"] for r in report["results"]}
+    assert "redis.public_network" in ids
+    assert "redis.client_protocol" in ids
+
+
+def test_redis_fail_exit_1(capsys):
+    path = ROOT / "fixtures" / "redis-plan" / "fail.json"
+    code = main(["check", "--plan", str(path), "--json"])
+    assert code == 1
+    report = json.loads(capsys.readouterr().out)
+    by_id = {r["id"]: r for r in report["results"]}
+    assert by_id["redis.public_network"]["severity"] == "fail"
+    assert by_id["redis.client_protocol"]["severity"] == "fail"
+    assert by_id["redis.access_keys_auth"]["severity"] == "fail"
+    assert by_id["redis.identity"]["severity"] == "warn"
+
+
 @pytest.mark.integration
 def test_checkov_available():
     assert shutil.which("checkov"), "checkov must be on PATH for integration tests"

@@ -12,6 +12,7 @@ PRODUCT_ORDER: tuple[str, ...] = (
     "sql",
     "sqlmi",
     "storage",
+    "redis",
     "keyvault",
     "acr",
     "servicebus",
@@ -25,6 +26,7 @@ PRODUCT_TITLES: dict[str, str] = {
     "sql": "Azure SQL",
     "sqlmi": "SQL Managed Instance",
     "storage": "Storage",
+    "redis": "Managed Redis",
     "keyvault": "Key Vault",
     "acr": "Azure Container Registry",
     "servicebus": "Service Bus",
@@ -108,6 +110,17 @@ _PACK_DEFS: dict[str, Pack] = {
             "CKV_DRIFTARMOR_STORAGE_4",
         ),
         policies_subdir="storage",
+    ),
+    "redis": Pack(
+        id="redis",
+        resource_types=frozenset({"azurerm_managed_redis"}),
+        checkov_ids=(
+            "CKV_DRIFTARMOR_REDIS_1",
+            "CKV_DRIFTARMOR_REDIS_2",
+            "CKV_DRIFTARMOR_REDIS_3",
+            "CKV_DRIFTARMOR_REDIS_4",
+        ),
+        policies_subdir="redis",
     ),
     "keyvault": Pack(
         id="keyvault",

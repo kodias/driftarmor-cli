@@ -16,12 +16,22 @@ Product / marketing site: [driftarmor.net](https://www.driftarmor.net)
 ## Install
 
 ```bash
+pip install driftarmor
+```
+
+Requires Python 3.11+.
+
+### From source (contributors)
+
+```bash
+git clone https://github.com/kodias/driftarmor-cli.git
+cd driftarmor-cli
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
 ```
 
-`checkov` is a package dependency; `pip install -e .` is enough.
+`checkov` is a package dependency; `pip install -e .` is enough for a local editable install.
 
 ## Usage
 

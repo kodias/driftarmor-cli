@@ -8,6 +8,22 @@ version = "0.1.0"
 description = "Checkov-backed Azure Terraform plan implement coach (AKS / SQL / SQL MI / Storage / Managed Redis / Key Vault / ACR / Service Bus / VM / NSG / Front Door)"
 readme = "README.md"
 requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "DriftArmor", email = "hello@driftarmor.net" }]
+keywords = ["terraform", "azure", "checkov", "iac", "security", "aks"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Security",
+  "Topic :: Software Development :: Quality Assurance",
+]
 dependencies = [
   "checkov>=3.2,<4",
   # Direct pin so Dependabot/dependency-graph see the patched release
@@ -17,6 +33,11 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]
+
+[project.urls]
+Homepage = "https://www.driftarmor.net"
+Repository = "https://github.com/kodias/driftarmor-cli"
+Issues = "https://github.com/kodias/driftarmor-cli/issues"
 
 [project.scripts]
 driftarmor = "driftarmor.cli:main"

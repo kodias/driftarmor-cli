@@ -1,9 +1,10 @@
+*.egg-info/
+*.py[cod]
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
 .venv/
 __pycache__/
-*.py[cod]
-.pytest_cache/
-*.egg-info/
-dist/
 build/
-.mypy_cache/
-.ruff_cache/
+dist/
+driftarmor-demo/

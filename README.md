@@ -36,17 +36,26 @@ pip install -e ".[dev]"
 ## Usage
 
 ```bash
-terraform plan -out=tfplan
-terraform show -json tfplan > plan.json
+driftarmor -v
+driftarmor --version
 
-# Implement coach (Checkov packs + citations)
+# From a Terraform module directory (runs plan + show -json; terraform on PATH)
+driftarmor check --dir .
+driftarmor drift --dir ./infra
+
+# Existing show -json file
 driftarmor check --plan plan.json
 driftarmor check --plan plan.json --json
 driftarmor check --plan plan.json --no-color
 
-# Destructive-change gate on resource_changes (exit 1 on delete/replace)
-driftarmor drift --plan plan.json
-driftarmor drift --plan plan.json --json
+# Binary plan file from `terraform plan -out=tfplan` (runs show -json)
+driftarmor check --plan tfplan
+driftarmor drift --plan tfplan --json
+
+# Or export JSON yourself
+terraform plan -out=tfplan
+terraform show -json tfplan > plan.json
+driftarmor check --plan plan.json
 ```
 
 Human output uses green / yellow / red on TTY. Colors disable when stdout is
@@ -58,8 +67,8 @@ Large plan files are loaded fully into memory (same as `check`).
 
 | Command | 0 | 1 | 2 |
 |---------|---|---|---|
-| `check` | No matched packs, or no `fail` | One or more `fail` | Bad plan JSON / checkov missing |
-| `drift` | No delete/replace (creates/updates OK) | Any delete or replace | Bad plan JSON / unknown actions |
+| `check` | No matched packs, or no `fail` | One or more `fail` | Bad plan JSON / checkov or terraform missing / plan failed |
+| `drift` | No delete/replace (creates/updates OK) | Any delete or replace | Bad plan JSON / unknown actions / terraform missing / plan failed |
 
 ## Fixtures
 

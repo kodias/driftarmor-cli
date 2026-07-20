@@ -8,10 +8,19 @@ from pathlib import Path
 
 import pytest
 
+from driftarmor import __version__
 from driftarmor.cli import main
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "aks-plan"
+
+
+@pytest.mark.parametrize("flag", ["-v", "--version"])
+def test_version_flag(flag, capsys):
+    with pytest.raises(SystemExit) as exc:
+        main([flag])
+    assert exc.value.code == 0
+    assert f"driftarmor {__version__}" in capsys.readouterr().out
 
 
 def test_fail_fixture_exit_1_and_oms_fail(capsys):

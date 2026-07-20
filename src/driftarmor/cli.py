@@ -1,4 +1,4 @@
-"""CLI entrypoint: driftarmor check|drift --plan PATH [--json] [--no-color]."""
+"""CLI entrypoint: driftarmor check|drift --plan PATH|--dir PATH [--json] [--no-color]."""
 
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 from typing import Any, Sequence
 
+from driftarmor import __version__
 from driftarmor.checkov_runner import CheckovNotFoundError, CheckovRunError, run_checkov
 from driftarmor.color import ACTION_TO_LEVEL, SEVERITY_TO_LEVEL, colorize, colors_enabled
 from driftarmor.drift import (
@@ -18,16 +19,19 @@ from driftarmor.drift import (
 from driftarmor.packs import detect_packs
 from driftarmor.plan_io import PlanLoadError, load_plan_json
 from driftarmor.report import empty_report, exit_code_for_report, map_checkov_to_report
+from driftarmor.terraform_plan import TerraformError, materialize_plan_json
 
 
 UNSUPPORTED = """Unsupported:
-  - Plain .tf without plan JSON (use: terraform show -json <planfile>)
   - Remote-only modules not present in the plan
   - Live cloud / kubectl inspection (drift is plan JSON only — not live inventory)
   - Unmanaged / shadow resources outside Terraform state
   - Auto-remediation
   - Cost / SKU sizing evaluation
   - Azure resources outside active packs (AKS, SQL, SQL MI, Storage, Managed Redis, Key Vault, ACR, Service Bus, VM, NSG, Front Door)
+  - Extra terraform plan flags (-var-file, -target, …) — run plan yourself and pass --plan
+
+Requires terraform on PATH when using --dir or a binary --plan file.
 
 drift = destructive-change gate on terraform show -json resource_changes
   (exit 1 on delete/replace). Not continuous live drift detection.
@@ -191,6 +195,27 @@ def drift_command(
     return exit_code_for_drift(report)
 
 
+def _add_plan_source_args(parser: argparse.ArgumentParser) -> None:
+    source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument(
+        "--plan",
+        type=Path,
+        help=(
+            "Path to terraform show -json output, or a binary plan file "
+            "(-out=…) which will be converted via terraform show -json"
+        ),
+    )
+    source.add_argument(
+        "--dir",
+        type=Path,
+        dest="module_dir",
+        help=(
+            "Terraform module directory: run terraform plan -out then "
+            "show -json (terraform must be on PATH)"
+        ),
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="driftarmor",
@@ -203,23 +228,25 @@ def build_parser() -> argparse.ArgumentParser:
         epilog=UNSUPPORTED,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    sub = parser.add_subparsers(dest="command", required=True)
+    parser.add_argument(
+        "-v",
+        "--version",
+        action="version",
+        version=f"%(prog)s {__version__}",
+    )
+    # required=False so -v/--version works without a subcommand
+    sub = parser.add_subparsers(dest="command", required=False)
 
     check = sub.add_parser(
         "check",
         help=(
-            "Evaluate a terraform show -json plan for AKS, SQL, SQL MI, "
+            "Evaluate a terraform plan for AKS, SQL, SQL MI, "
             "Storage, Managed Redis, Key Vault, ACR, Service Bus, VM, NSG, and Front Door"
         ),
         epilog=UNSUPPORTED,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    check.add_argument(
-        "--plan",
-        required=True,
-        type=Path,
-        help="Path to terraform show -json output",
-    )
+    _add_plan_source_args(check)
     check.add_argument(
         "--json",
         action="store_true",
@@ -242,12 +269,7 @@ def build_parser() -> argparse.ArgumentParser:
         epilog=UNSUPPORTED,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    drift.add_argument(
-        "--plan",
-        required=True,
-        type=Path,
-        help="Path to terraform show -json output",
-    )
+    _add_plan_source_args(drift)
     drift.add_argument(
         "--json",
         action="store_true",
@@ -266,18 +288,29 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(list(argv) if argv is not None else None)
-    if args.command == "check":
-        return check_command(
-            args.plan,
-            as_json=args.as_json,
-            no_color=args.no_color,
-        )
-    if args.command == "drift":
-        return drift_command(
-            args.plan,
-            as_json=args.as_json,
-            no_color=args.no_color,
-        )
+    if args.command in ("check", "drift"):
+        try:
+            with materialize_plan_json(
+                plan=getattr(args, "plan", None),
+                module_dir=getattr(args, "module_dir", None),
+            ) as plan_path:
+                if args.command == "check":
+                    return check_command(
+                        plan_path,
+                        as_json=args.as_json,
+                        no_color=args.no_color,
+                    )
+                return drift_command(
+                    plan_path,
+                    as_json=args.as_json,
+                    no_color=args.no_color,
+                )
+        except TerraformError as exc:
+            print(f"error: {exc.message}", file=sys.stderr)
+            return 2
+    if args.command is None:
+        parser.print_help(sys.stderr)
+        return 2
     parser.error(f"unknown command: {args.command}")
     return 2
 

@@ -100,6 +100,11 @@ def test_run_plan_then_show(tmp_path):
     dest.mkdir()
     payload = {"format_version": "1.2", "resource_changes": []}
 
+    init_proc = MagicMock()
+    init_proc.returncode = 0
+    init_proc.stdout = "Terraform has been successfully initialized!\n"
+    init_proc.stderr = ""
+
     plan_proc = MagicMock()
     plan_proc.returncode = 0
     plan_proc.stdout = "Plan: 0 to add\n"
@@ -114,11 +119,11 @@ def test_run_plan_then_show(tmp_path):
         patch("driftarmor.terraform_plan.find_terraform", return_value=Path("terraform")),
         patch(
             "driftarmor.terraform_plan.subprocess.run",
-            side_effect=[plan_proc, show_proc],
         ) as run,
     ):
-        # show_plan_json checks binary exists — create it when plan "runs"
         def _run(cmd, **kwargs):
+            if cmd[1] == "init":
+                return init_proc
             if cmd[1] == "plan":
                 Path(cmd[2].removeprefix("-out=")).write_bytes(b"bin")
                 return plan_proc
@@ -128,8 +133,28 @@ def test_run_plan_then_show(tmp_path):
         out = run_plan(module, dest_dir=dest)
 
     assert json.loads(out.read_text(encoding="utf-8")) == payload
-    assert run.call_count == 2
+    assert run.call_count == 3
+    assert run.call_args_list[0].args[0][1] == "init"
+    assert run.call_args_list[1].args[0][1] == "plan"
+    assert run.call_args_list[2].args[0][1] == "show"
 
+
+def test_run_plan_init_failure(tmp_path):
+    module = tmp_path / "mod"
+    module.mkdir()
+    dest = tmp_path / "out"
+    dest.mkdir()
+    init_proc = MagicMock()
+    init_proc.returncode = 1
+    init_proc.stdout = ""
+    init_proc.stderr = "init failed\n"
+
+    with (
+        patch("driftarmor.terraform_plan.find_terraform", return_value=Path("terraform")),
+        patch("driftarmor.terraform_plan.subprocess.run", return_value=init_proc),
+    ):
+        with pytest.raises(TerraformError, match="terraform init failed"):
+            run_plan(module, dest_dir=dest)
 
 def test_materialize_binary_plan_calls_show(tmp_path):
     binary = tmp_path / "tfplan"

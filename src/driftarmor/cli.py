@@ -32,6 +32,7 @@ UNSUPPORTED = """Unsupported:
   - Extra terraform plan flags (-var-file, -target, …) — run plan yourself and pass --plan
 
 Requires terraform on PATH when using --dir or a binary --plan file.
+`--dir` runs `terraform init` then `plan` then `show -json`.
 
 drift = destructive-change gate on terraform show -json resource_changes
   (exit 1 on delete/replace). Not continuous live drift detection.
@@ -210,8 +211,8 @@ def _add_plan_source_args(parser: argparse.ArgumentParser) -> None:
         type=Path,
         dest="module_dir",
         help=(
-            "Terraform module directory: run terraform plan -out then "
-            "show -json (terraform must be on PATH)"
+            "Terraform module directory: run terraform init, plan -out, "
+            "then show -json (terraform must be on PATH)"
         ),
     )
 

@@ -39,7 +39,7 @@ pip install -e ".[dev]"
 driftarmor -v
 driftarmor --version
 
-# From a Terraform module directory (runs plan + show -json; terraform on PATH)
+# From a Terraform module directory (runs init + plan + show -json; terraform on PATH)
 driftarmor check --dir .
 driftarmor drift --dir ./infra
 

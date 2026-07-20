@@ -105,12 +105,47 @@ def show_plan_json(
     return out_path
 
 
-def run_plan(workdir: Path, *, dest_dir: Path) -> Path:
-    """Run ``terraform plan -out`` then ``show -json`` in workdir."""
+def run_init(workdir: Path) -> None:
+    """Run ``terraform init -input=false`` in workdir."""
     terraform = find_terraform()
     workdir = workdir.resolve()
     if not workdir.is_dir():
         raise TerraformError(f"terraform module directory not found: {workdir}")
+
+    cmd = [
+        str(terraform),
+        "init",
+        "-input=false",
+        "-no-color",
+    ]
+    try:
+        proc = subprocess.run(
+            cmd,
+            cwd=str(workdir),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError as exc:
+        raise TerraformError(f"failed to run terraform init: {exc}") from exc
+
+    _write_stream(proc.stderr)
+    _write_stream(proc.stdout)
+
+    if proc.returncode != 0:
+        raise TerraformError(
+            f"terraform init failed (exit {proc.returncode})"
+        )
+
+
+def run_plan(workdir: Path, *, dest_dir: Path) -> Path:
+    """Run ``terraform init``, ``plan -out``, then ``show -json`` in workdir."""
+    terraform = find_terraform()
+    workdir = workdir.resolve()
+    if not workdir.is_dir():
+        raise TerraformError(f"terraform module directory not found: {workdir}")
+
+    run_init(workdir)
 
     binary_path = dest_dir / "tfplan"
     cmd = [
